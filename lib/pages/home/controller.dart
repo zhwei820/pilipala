@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pilipala/pages/rcmd/controller.dart';
 import 'package:hive/hive.dart';
 import 'package:pilipala/models/common/tab_type.dart';
 import 'package:pilipala/utils/storage.dart';
@@ -47,8 +48,12 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
   void onRefresh() {
     int index = tabController.index;
-    var ctr = tabsCtrList[index];
-    ctr().onRefresh();
+    var ctr = tabsCtrList[index]();
+    if (ctr is RcmdController) {
+      ctr.appendBelow();
+    } else {
+      ctr.onRefresh();
+    }
   }
 
   void animateToTop() {

@@ -19,6 +19,8 @@ class RcmdController extends GetxController {
   late bool enableSaveLastData;
   late String defaultRcmdType = 'web';
   late RxList<dynamic> videoList;
+  // 网格行高 + 行间距，由视图按当前列数与字体缩放写入
+  double rowExtent = 0;
 
   @override
   void onInit() {
@@ -74,6 +76,8 @@ class RcmdController extends GetxController {
         }
       } else if (type == 'onLoad') {
         videoList.addAll(res['data']);
+      } else if (type == 'appendBelow') {
+        _insertBelowViewport(res['data']);
       }
       _currentPage += 1;
       // 若videoList数量太小，可能会影响翻页，此时再次请求
@@ -90,6 +94,34 @@ class RcmdController extends GetxController {
   Future onRefresh() async {
     isLoadingMore = true;
     queryRcmdFeed('onRefresh');
+  }
+
+  /// 双击首页：保留当前卡片，把新推荐接在屏幕可见卡片之后并上滚到新卡片
+  Future appendBelow() async {
+    isLoadingMore = true;
+    await queryRcmdFeed('appendBelow');
+  }
+
+  void _insertBelowViewport(List data) {
+    if (data.isEmpty) return;
+    if (rowExtent <= 0 || !scrollController.hasClients) {
+      videoList.addAll(data);
+      return;
+    }
+    final int columns = crossAxisCount.value;
+    final ScrollPosition pos = scrollController.position;
+    // 第一行完全位于屏幕下方的行，新卡片从这里插入；部分可见的卡片保留在上方
+    final int row =
+        ((pos.pixels + pos.viewportDimension) / rowExtent).ceil();
+    final int index = (row * columns).clamp(0, videoList.length);
+    videoList.insertAll(index, data);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scrollController.hasClients) return;
+      final double target = ((index ~/ columns) * rowExtent)
+          .clamp(0.0, scrollController.position.maxScrollExtent);
+      scrollController.animateTo(target,
+          duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+    });
   }
 
   // 上拉加载

@@ -130,6 +130,7 @@ class _RcmdPageState extends State<RcmdPage>
             crossAxisCount /
             StyleString.aspectRatio) +
         (crossAxisCount == 1 ? 68 : MediaQuery.textScalerOf(context).scale(86));
+    ctr.rowExtent = mainAxisExtent + StyleString.safeSpace;
     return SliverGrid(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         // 行间距
