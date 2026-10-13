@@ -1254,8 +1254,8 @@ class _HeaderControlState extends State<HeaderControl> {
       title: Row(
         children: [
           ComBtn(
-            icon: const Icon(
-              FontAwesomeIcons.arrowLeft,
+            icon: Icon(
+              FontAwesomeIcons.arrowLeft.data,
               size: 15,
               color: Colors.white,
             ),
@@ -1306,8 +1306,8 @@ class _HeaderControlState extends State<HeaderControl> {
             )
           ] else ...[
             ComBtn(
-              icon: const Icon(
-                FontAwesomeIcons.house,
+              icon: Icon(
+                FontAwesomeIcons.house.data,
                 size: 15,
                 color: Colors.white,
               ),

@@ -162,8 +162,8 @@ Widget forWard(item, context, ctr, source, {floor = 1}) {
     case 'DYNAMIC_TYPE_NONE':
       return Row(
         children: [
-          const Icon(
-            FontAwesomeIcons.ghost,
+          Icon(
+            FontAwesomeIcons.ghost.data,
             size: 14,
           ),
           const SizedBox(width: 4),

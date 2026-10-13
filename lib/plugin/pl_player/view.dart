@@ -334,8 +334,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         icon: Obx(
           () => Icon(
             _.isFullScreen.value
-                ? FontAwesomeIcons.compress
-                : FontAwesomeIcons.expand,
+                ? FontAwesomeIcons.compress.data
+                : FontAwesomeIcons.expand.data,
             size: 15,
             color: Colors.white,
           ),
@@ -822,8 +822,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                   child: ComBtn(
                     icon: Icon(
                       _.controlsLock.value
-                          ? FontAwesomeIcons.lock
-                          : FontAwesomeIcons.lockOpen,
+                          ? FontAwesomeIcons.lock.data
+                          : FontAwesomeIcons.lockOpen.data,
                       size: 15,
                       color: Colors.white,
                     ),

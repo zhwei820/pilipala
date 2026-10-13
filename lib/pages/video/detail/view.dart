@@ -872,7 +872,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
         child: Row(
           children: [
             ComBtn(
-              icon: const Icon(FontAwesomeIcons.arrowLeft, size: 15),
+              icon: Icon(FontAwesomeIcons.arrowLeft.data, size: 15),
               fuc: () => Get.back(),
             ),
             const Spacer(),

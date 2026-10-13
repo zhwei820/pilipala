@@ -348,8 +348,8 @@ class _BangumiInfoState extends State<BangumiInfo> {
               children: <Widget>[
                 Obx(
                   () => ActionItem(
-                    icon: const Icon(FontAwesomeIcons.thumbsUp),
-                    selectIcon: const Icon(FontAwesomeIcons.solidThumbsUp),
+                    icon: Icon(FontAwesomeIcons.thumbsUp.data),
+                    selectIcon: Icon(FontAwesomeIcons.solidThumbsUp.data),
                     onTap: handleState(bangumiIntroController.actionLikeVideo),
                     selectStatus: bangumiIntroController.hasLike.value,
                     text: widget.bangumiDetail!.stat!['likes']!.toString(),
@@ -357,8 +357,8 @@ class _BangumiInfoState extends State<BangumiInfo> {
                 ),
                 Obx(
                   () => ActionItem(
-                    icon: const Icon(FontAwesomeIcons.b),
-                    selectIcon: const Icon(FontAwesomeIcons.b),
+                    icon: Icon(FontAwesomeIcons.b.data),
+                    selectIcon: Icon(FontAwesomeIcons.b.data),
                     onTap: handleState(bangumiIntroController.actionCoinVideo),
                     selectStatus: bangumiIntroController.hasCoin.value,
                     text: widget.bangumiDetail!.stat!['coins']!.toString(),
@@ -366,22 +366,22 @@ class _BangumiInfoState extends State<BangumiInfo> {
                 ),
                 Obx(
                   () => ActionItem(
-                    icon: const Icon(FontAwesomeIcons.star),
-                    selectIcon: const Icon(FontAwesomeIcons.solidStar),
+                    icon: Icon(FontAwesomeIcons.star.data),
+                    selectIcon: Icon(FontAwesomeIcons.solidStar.data),
                     onTap: () => showFavBottomSheet(),
                     selectStatus: bangumiIntroController.hasFav.value,
                     text: widget.bangumiDetail!.stat!['favorite']!.toString(),
                   ),
                 ),
                 ActionItem(
-                  icon: const Icon(FontAwesomeIcons.comment),
-                  selectIcon: const Icon(FontAwesomeIcons.reply),
+                  icon: Icon(FontAwesomeIcons.comment.data),
+                  selectIcon: Icon(FontAwesomeIcons.reply.data),
                   onTap: () => videoDetailCtr.tabCtr.animateTo(1),
                   selectStatus: false,
                   text: widget.bangumiDetail!.stat!['reply']!.toString(),
                 ),
                 ActionItem(
-                  icon: const Icon(FontAwesomeIcons.shareFromSquare),
+                  icon: Icon(FontAwesomeIcons.shareFromSquare.data),
                   onTap: () => bangumiIntroController.actionShareVideo(),
                   selectStatus: false,
                   text: widget.bangumiDetail!.stat!['share']!.toString(),

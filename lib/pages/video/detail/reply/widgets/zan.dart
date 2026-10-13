@@ -72,8 +72,8 @@ class _ZanButtonState extends State<ZanButton> {
           children: [
             Icon(
               widget.replyItem!.action == 1
-                  ? FontAwesomeIcons.solidThumbsUp
-                  : FontAwesomeIcons.thumbsUp,
+                  ? FontAwesomeIcons.solidThumbsUp.data
+                  : FontAwesomeIcons.thumbsUp.data,
               size: 16,
               color: widget.replyItem!.action == 1 ? primary : color,
             ),

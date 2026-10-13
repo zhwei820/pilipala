@@ -388,8 +388,8 @@ class _ActionPanelState extends State<ActionPanel>
           flex: 1,
           child: TextButton.icon(
             onPressed: forwardHandler,
-            icon: const Icon(
-              FontAwesomeIcons.shareFromSquare,
+            icon: Icon(
+              FontAwesomeIcons.shareFromSquare.data,
               size: 16,
             ),
             style: TextButton.styleFrom(
@@ -404,8 +404,8 @@ class _ActionPanelState extends State<ActionPanel>
           child: TextButton.icon(
             onPressed: () => _dynamicsController.pushDetail(widget.item, 1,
                 action: 'comment'),
-            icon: const Icon(
-              FontAwesomeIcons.comment,
+            icon: Icon(
+              FontAwesomeIcons.comment.data,
               size: 16,
             ),
             style: TextButton.styleFrom(
@@ -421,8 +421,8 @@ class _ActionPanelState extends State<ActionPanel>
             onPressed: handleState(onLikeDynamic),
             icon: Icon(
               stat.like!.status!
-                  ? FontAwesomeIcons.solidThumbsUp
-                  : FontAwesomeIcons.thumbsUp,
+                  ? FontAwesomeIcons.solidThumbsUp.data
+                  : FontAwesomeIcons.thumbsUp.data,
               size: 16,
               color: stat.like!.status! ? primary : color,
             ),

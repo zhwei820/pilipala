@@ -546,8 +546,8 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
     Map<String, Widget> menuListWidgets = {
       'like': Obx(
         () => ActionItem(
-          icon: const Icon(FontAwesomeIcons.thumbsUp),
-          selectIcon: const Icon(FontAwesomeIcons.solidThumbsUp),
+          icon: Icon(FontAwesomeIcons.thumbsUp.data),
+          selectIcon: Icon(FontAwesomeIcons.solidThumbsUp.data),
           onTap: handleState(videoIntroController.actionLikeVideo),
           onLongPress: () => videoIntroController.oneThreeDialog(),
           selectStatus: videoIntroController.hasLike.value,
@@ -556,8 +556,8 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
       ),
       'coin': Obx(
         () => ActionItem(
-          icon: const Icon(FontAwesomeIcons.b),
-          selectIcon: const Icon(FontAwesomeIcons.b),
+          icon: Icon(FontAwesomeIcons.b.data),
+          selectIcon: Icon(FontAwesomeIcons.b.data),
           onTap: handleState(videoIntroController.actionCoinVideo),
           selectStatus: videoIntroController.hasCoin.value,
           text: widget.videoDetail!.stat!.coin!.toString(),
@@ -565,8 +565,8 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
       ),
       'collect': Obx(
         () => ActionItem(
-          icon: const Icon(FontAwesomeIcons.star),
-          selectIcon: const Icon(FontAwesomeIcons.solidStar),
+          icon: Icon(FontAwesomeIcons.star.data),
+          selectIcon: Icon(FontAwesomeIcons.solidStar.data),
           onTap: () => showFavBottomSheet(),
           onLongPress: () => showFavBottomSheet(type: 'longPress'),
           selectStatus: videoIntroController.hasFav.value,
@@ -574,7 +574,7 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
         ),
       ),
       'watchLater': ActionItem(
-        icon: const Icon(FontAwesomeIcons.clock),
+        icon: Icon(FontAwesomeIcons.clock.data),
         onTap: () async {
           final res =
               await UserHttp.toViewLater(bvid: widget.videoDetail!.bvid);
@@ -584,15 +584,15 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
         text: '稍后看',
       ),
       'share': ActionItem(
-        icon: const Icon(FontAwesomeIcons.shareFromSquare),
+        icon: Icon(FontAwesomeIcons.shareFromSquare.data),
         onTap: () => videoIntroController.actionShareVideo(),
         selectStatus: false,
         text: '分享',
       ),
       'dislike': Obx(
         () => ActionItem(
-          icon: const Icon(FontAwesomeIcons.thumbsDown),
-          selectIcon: const Icon(FontAwesomeIcons.solidThumbsDown),
+          icon: Icon(FontAwesomeIcons.thumbsDown.data),
+          selectIcon: Icon(FontAwesomeIcons.solidThumbsDown.data),
           onTap: () {},
           selectStatus: videoIntroController.hasDisLike.value,
           text: '不喜欢',

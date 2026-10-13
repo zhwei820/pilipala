@@ -364,14 +364,14 @@ class _MemberPageState extends State<MemberPage>
                             )),
                             const SizedBox(width: 2),
                             if (_memberController.memberInfo.value.sex == '女')
-                              const Icon(
-                                FontAwesomeIcons.venus,
+                              Icon(
+                                FontAwesomeIcons.venus.data,
                                 size: 14,
                                 color: Colors.pink,
                               ),
                             if (_memberController.memberInfo.value.sex == '男')
-                              const Icon(
-                                FontAwesomeIcons.mars,
+                              Icon(
+                                FontAwesomeIcons.mars.data,
                                 size: 14,
                                 color: Colors.blue,
                               ),
