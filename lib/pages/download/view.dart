@@ -20,6 +20,12 @@ class DownloadPage extends StatelessWidget {
         actions: [
           if (Platform.isAndroid)
             IconButton(
+              tooltip: '从缓存目录恢复列表',
+              onPressed: () => _recoverFromDisk(service),
+              icon: const Icon(Icons.restore),
+            ),
+          if (Platform.isAndroid)
+            IconButton(
               tooltip: '导入哔哩哔哩缓存',
               onPressed: () => _importBiliCache(context, service),
               icon: const Icon(Icons.drive_folder_upload_outlined),
@@ -247,6 +253,20 @@ class DownloadGroupPage extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+Future<void> _recoverFromDisk(DownloadService service) async {
+  if (!await Permission.manageExternalStorage.request().isGranted) {
+    SmartDialog.showToast('未授予所有文件访问权限');
+    return;
+  }
+  SmartDialog.showLoading(msg: '正在恢复');
+  try {
+    final int count = await service.recoverFromDisk();
+    SmartDialog.showToast(count > 0 ? '已恢复 $count 个视频' : '没有可恢复的视频');
+  } finally {
+    SmartDialog.dismiss(status: SmartStatus.loading);
   }
 }
 

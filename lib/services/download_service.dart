@@ -269,34 +269,86 @@ class DownloadService extends GetxService {
       if (entry['is_completed'] != true || entry['ep'] != null) return null;
       final String qualityDir = '${dir.path}/${entry['type_tag']}';
       if (!await File('$qualityDir/video.m4s').exists()) return null;
-      final Map page = entry['page_data'];
-      final String bvid = (entry['bvid'] as String?)?.isNotEmpty == true
-          ? entry['bvid']
-          : IdUtils.av2bv(entry['avid']);
-      final int bytes = entry['total_bytes'] ?? 0;
-      final DownloadTask task = DownloadTask(
-        bvid: bvid,
-        cid: page['cid'],
-        title: entry['title'] ?? bvid,
-        partTitle: multiPage ? page['part'] : null,
-        page: page['page'],
-        ownerName: entry['owner_name'],
-        cover: entry['cover'] ?? '',
-        qn: entry['video_quality'] ?? 0,
-        qnDesc: entry['quality_pithy_description'] ?? '',
-        duration: (entry['total_time_milli'] ?? 0) ~/ 1000,
-        width: page['width'],
-        height: page['height'],
-        totalBytes: bytes,
-        receivedBytes: bytes,
-        status: DownloadStatus.completed,
-        hasAudio: entry['has_dash_audio'] ?? true,
-        createdAt: entry['time_create_stamp'],
-      );
+      final DownloadTask task = _taskFromEntry(entry, multiPage: multiPage);
       return (task: task, qualityDir: qualityDir);
     } catch (_) {
       return null;
     }
+  }
+
+  DownloadTask _taskFromEntry(Map entry, {required bool multiPage}) {
+    final Map page = entry['page_data'];
+    final String bvid = (entry['bvid'] as String?)?.isNotEmpty == true
+        ? entry['bvid']
+        : IdUtils.av2bv(entry['avid']);
+    final int bytes = entry['total_bytes'] ?? 0;
+    return DownloadTask(
+      bvid: bvid,
+      cid: page['cid'],
+      title: entry['title'] ?? bvid,
+      partTitle: multiPage ? page['part'] : null,
+      page: page['page'],
+      ownerName: entry['owner_name'],
+      cover: entry['cover'] ?? '',
+      qn: entry['video_quality'] ?? 0,
+      qnDesc: entry['quality_pithy_description'] ?? '',
+      duration: (entry['total_time_milli'] ?? 0) ~/ 1000,
+      width: page['width'],
+      height: page['height'],
+      totalBytes: bytes,
+      receivedBytes: bytes,
+      status: DownloadStatus.completed,
+      hasAudio: entry['has_dash_audio'] ?? true,
+      createdAt: entry['time_create_stamp'],
+    );
+  }
+
+  /// 缓存列表存在应用私有数据里，重装或清除数据后会丢失而缓存目录仍在。
+  /// 从目录中的 entry.json 重建列表里缺失的任务，返回恢复数量。
+  /// 重装后旧文件属于原 UID，需要「所有文件访问权限」才能读取
+  Future<int> recoverFromDisk() async {
+    await _ready;
+    final Directory root = Directory(_rootDir);
+    if (!await root.exists()) return 0;
+    final Set<String> known = tasks.map((t) => t.id).toSet();
+    final List<Directory> dirs = await root
+        .list()
+        .where((e) => e is Directory && !known.contains(e.path.split('/').last))
+        .cast<Directory>()
+        .toList();
+    final Map<String, Map> entries = {};
+    for (final Directory dir in dirs) {
+      try {
+        final String name = dir.path.split('/').last;
+        final File entryFile = File('${dir.path}/entry.json');
+        if (!await entryFile.exists() ||
+            !await File('${dir.path}/video.m4s').exists()) {
+          continue;
+        }
+        entries[name] = jsonDecode(await entryFile.readAsString());
+      } catch (_) {}
+    }
+    final Map<String, int> pageCount = {};
+    for (final String name in entries.keys) {
+      final String bvid = name.split('_').first;
+      pageCount[bvid] = (pageCount[bvid] ?? 0) + 1;
+    }
+    final Map<String, Map<String, dynamic>> recovered = {};
+    entries.forEach((name, entry) {
+      try {
+        final DownloadTask task = _taskFromEntry(entry,
+            multiPage: (pageCount[name.split('_').first] ?? 0) > 1);
+        // 目录名即任务 id，对不上时按 id 找不到文件
+        if (task.id != name) return;
+        tasks.add(task);
+        recovered[task.id] = task.toJson();
+      } catch (_) {}
+    });
+    if (recovered.isNotEmpty) {
+      await GStrorage.download.putAll(recovered);
+      tasks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+    return recovered.length;
   }
 
   /// c_<cid> 整体重命名为任务目录，再把画质子目录里的音视频提到任务目录根部。
