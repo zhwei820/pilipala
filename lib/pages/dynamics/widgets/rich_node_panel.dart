@@ -147,8 +147,8 @@ InlineSpan richNode(item, context) {
               child: NetworkImgLayer(
                 src: i.emoji.iconUrl,
                 type: 'emote',
-                width: i.emoji.size * 20,
-                height: i.emoji.size * 20,
+                width: (i.emoji.size ?? 1) * 20,
+                height: (i.emoji.size ?? 1) * 20,
               ),
             ),
           );
