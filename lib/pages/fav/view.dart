@@ -7,6 +7,8 @@ import 'package:pilipala/pages/fav/index.dart';
 import 'package:pilipala/pages/fav/widgets/item.dart';
 import 'package:pilipala/utils/route_push.dart';
 
+/// 收藏夹列表页（路由 /fav）。不带 mid 或 mid 为自己 →「我的收藏」，入口在媒体库页；
+/// 带他人 mid →「Ta的收藏」，入口在用户主页（member）。点进单个收藏夹是 fav_detail。
 class FavPage extends StatefulWidget {
   const FavPage({super.key});
 

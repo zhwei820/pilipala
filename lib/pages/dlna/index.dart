@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:dlna_dart/dlna.dart';
 import 'package:flutter/material.dart';
 
+/// 视频详情页播放器顶栏「投屏」按钮弹出的 DLNA 设备选择对话框（非独立页面，也不限直播，入口在
+/// video/detail/widgets/header_control.dart）：搜索局域网设备 20 秒，点选后把当前视频地址推过去播放。
 class LiveDlnaPage extends StatefulWidget {
   final String datasource;
 

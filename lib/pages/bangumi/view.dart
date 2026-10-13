@@ -10,6 +10,7 @@ import 'package:pilipala/utils/main_stream.dart';
 import 'controller.dart';
 import 'widgets/bangumu_card_v.dart';
 
+/// 首页顶部「番剧」Tab（注册于 models/common/tab_type.dart）：登录后的最近追番 + 推荐番剧网格。
 class BangumiPage extends StatefulWidget {
   const BangumiPage({super.key});
 

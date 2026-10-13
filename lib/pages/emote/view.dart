@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../models/video/reply/emote.dart';
 import 'controller.dart';
 
+/// 输入栏切到表情时替代键盘区域的表情面板（非独立页面），用于视频评论回复框（video/detail/reply_new）
+/// 和私信聊天页（whisper_detail）；只负责选表情，插入文本由调用方在 onChoose 里处理。
 class EmotePanel extends StatefulWidget {
   final Function onChoose;
   const EmotePanel({super.key, required this.onChoose});

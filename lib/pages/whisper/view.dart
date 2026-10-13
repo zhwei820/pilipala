@@ -9,6 +9,8 @@ import 'package:pilipala/utils/utils.dart';
 
 import 'controller.dart';
 
+/// 消息中心（路由 /whisper），入口是首页顶栏登录后才显示的铃铛按钮。上方四宫格进回复我的/@我的/
+/// 收到的赞/系统通知（@我的 未实现，只弹 toast），下方是私信会话列表，点进去是 whisper_detail。
 class WhisperPage extends StatefulWidget {
   const WhisperPage({super.key});
 

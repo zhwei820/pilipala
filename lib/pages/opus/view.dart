@@ -5,6 +5,8 @@ import 'package:pilipala/models/read/opus.dart';
 import 'controller.dart';
 import 'text_helper.dart';
 
+/// 图文动态（B 站 opus）详情页，路由 /opus。入口：动态流里的图文/专栏卡片、用户主页的图文列表
+/// （member_article）、bilibili://opus 外链。若接口判定实为专栏（isCv），会替换跳转到 /read。
 class OpusPage extends StatefulWidget {
   const OpusPage({super.key});
 
