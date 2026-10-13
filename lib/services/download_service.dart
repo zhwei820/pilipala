@@ -130,9 +130,9 @@ class DownloadService extends GetxService {
     }
   }
 
-  String taskDir(DownloadTask t) => t.localDir ?? '$_rootDir/${t.id}';
-  String videoPath(DownloadTask t) => '${t.qualityDir ?? taskDir(t)}/video.m4s';
-  String audioPath(DownloadTask t) => '${t.qualityDir ?? taskDir(t)}/audio.m4s';
+  String taskDir(DownloadTask t) => '$_rootDir/${t.id}';
+  String videoPath(DownloadTask t) => '${taskDir(t)}/video.m4s';
+  String audioPath(DownloadTask t) => '${taskDir(t)}/audio.m4s';
   String coverPath(DownloadTask t) => '${taskDir(t)}/cover.jpg';
 
   DownloadTask? find(String bvid, int cid) =>
@@ -187,12 +187,6 @@ class DownloadService extends GetxService {
     if (await dir.exists()) {
       await dir.delete(recursive: true);
     }
-    // 官方客户端缓存按 <avid>/c_<cid> 组织，删完最后一个分P时一并删除 avid 目录
-    if (t.localDir != null && await dir.parent.exists()) {
-      if (await dir.parent.list().isEmpty) {
-        await dir.parent.delete();
-      }
-    }
   }
 
   /// 哔哩哔哩官方客户端缓存的默认导入目录。
@@ -204,15 +198,20 @@ class DownloadService extends GetxService {
     return download == null ? null : '$download/bilibili';
   }
 
-  /// 按官方缓存结构 <avid>/c_<cid>/entry.json 导入，文件保留在原处；返回新增数量。
-  /// 读取其他应用写入的非媒体文件需要「所有文件访问权限」，由调用方先申请
+  /// 按官方缓存结构 <avid>/c_<cid>/entry.json 导入，并把文件移动到本应用的缓存目录；
+  /// 返回新增数量。已在列表中的视频不移动，留在原处。
+  /// 读写其他应用写入的非媒体文件需要「所有文件访问权限」，由调用方先申请
   Future<int> importBiliCache(String root) async {
     await _ready;
     final Directory rootDir = Directory(root);
     if (!await rootDir.exists()) return 0;
-    final List<DownloadTask> imported = [];
-    await for (final FileSystemEntity avidDir in rootDir.list()) {
-      if (avidDir is! Directory) continue;
+    int count = 0;
+    final List<Directory> avidDirs = await rootDir
+        .list()
+        .where((e) => e is Directory)
+        .cast<Directory>()
+        .toList();
+    for (final Directory avidDir in avidDirs) {
       final List<Directory> pages = await avidDir
           .list()
           .where(
@@ -220,25 +219,27 @@ class DownloadService extends GetxService {
           .cast<Directory>()
           .toList();
       for (final Directory page in pages) {
-        final DownloadTask? task =
+        final ({DownloadTask task, String qualityDir})? entry =
             await _parseBiliEntry(page, multiPage: pages.length > 1);
-        if (task != null &&
-            find(task.bvid, task.cid) == null &&
-            imported.every((e) => e.id != task.id)) {
-          imported.add(task);
+        if (entry == null || find(entry.task.bvid, entry.task.cid) != null) {
+          continue;
+        }
+        if (await _moveBiliEntry(page, entry.qualityDir, entry.task)) {
+          tasks.add(entry.task);
+          // 逐个落盘，中途被杀时已移动的视频不会从列表丢失
+          await GStrorage.download.put(entry.task.id, entry.task.toJson());
+          count++;
         }
       }
+      await _deleteIfEmpty(avidDir);
     }
-    if (imported.isEmpty) return 0;
-    tasks
-      ..addAll(imported)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    await GStrorage.download
-        .putAll({for (final DownloadTask t in imported) t.id: t.toJson()});
-    return imported.length;
+    await _deleteIfEmpty(rootDir);
+    tasks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return count;
   }
 
-  Future<DownloadTask?> _parseBiliEntry(Directory dir,
+  Future<({DownloadTask task, String qualityDir})?> _parseBiliEntry(
+      Directory dir,
       {required bool multiPage}) async {
     try {
       final File entryFile = File('${dir.path}/entry.json');
@@ -253,7 +254,7 @@ class DownloadService extends GetxService {
           ? entry['bvid']
           : IdUtils.av2bv(entry['avid']);
       final int bytes = entry['total_bytes'] ?? 0;
-      return DownloadTask(
+      final DownloadTask task = DownloadTask(
         bvid: bvid,
         cid: page['cid'],
         title: entry['title'] ?? bvid,
@@ -268,13 +269,59 @@ class DownloadService extends GetxService {
         receivedBytes: bytes,
         status: DownloadStatus.completed,
         hasAudio: entry['has_dash_audio'] ?? true,
-        localDir: dir.path,
-        qualityDir: qualityDir,
         createdAt: entry['time_create_stamp'],
       );
+      return (task: task, qualityDir: qualityDir);
     } catch (_) {
       return null;
     }
+  }
+
+  /// c_<cid> 整体重命名为任务目录，再把画质子目录里的音视频提到任务目录根部。
+  /// 同在共享存储内，rename 不复制数据
+  Future<bool> _moveBiliEntry(
+      Directory src, String qualityDir, DownloadTask task) async {
+    final String target = taskDir(task);
+    if (await Directory(target).exists()) return false;
+    final String movedQualityDir = '$target/${qualityDir.split('/').last}';
+    final List<(File, String)> moves = [
+      (File('$movedQualityDir/video.m4s'), videoPath(task)),
+      (File('$movedQualityDir/audio.m4s'), audioPath(task)),
+    ];
+    try {
+      await src.rename(target);
+    } catch (_) {
+      return false;
+    }
+    try {
+      for (final (File from, String to) in moves) {
+        if (await from.exists()) {
+          await from.rename(to);
+        }
+      }
+      await Directory(movedQualityDir).delete(recursive: true);
+      return true;
+    } catch (_) {
+      // 回滚，让文件留在导入目录，避免在缓存目录里留下列表不认识的残缺目录
+      try {
+        await Directory(movedQualityDir).create();
+        for (final (File from, String to) in moves) {
+          if (await File(to).exists()) {
+            await File(to).rename(from.path);
+          }
+        }
+        await Directory(target).rename(src.path);
+      } catch (_) {}
+      return false;
+    }
+  }
+
+  Future<void> _deleteIfEmpty(Directory dir) async {
+    try {
+      if (await dir.exists() && await dir.list().isEmpty) {
+        await dir.delete();
+      }
+    } catch (_) {}
   }
 
   void _persist(DownloadTask t) {

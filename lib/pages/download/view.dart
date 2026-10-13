@@ -68,7 +68,7 @@ Future<void> _importBiliCache(
     builder: (context) => AlertDialog(
       title: const Text('导入哔哩哔哩缓存'),
       content: Text(
-        '将读取 $dir 中的官方客户端缓存，文件保留在原处。\n\n'
+        '将把 $dir 中的官方客户端缓存移动到 PiliPala 缓存目录。\n\n'
         '官方缓存位于 Android/data/tv.danmaku.bili/download，系统不允许其他应用直接读取，'
         '请先用文件管理器把其中的文件夹移动到上述目录。\n\n'
         '读取需要「所有文件访问权限」。',
