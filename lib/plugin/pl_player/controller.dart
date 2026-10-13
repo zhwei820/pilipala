@@ -588,6 +588,7 @@ class PlPlayerController {
         videoPlayerController!.stream.duration.listen((event) {
           if (event > Duration.zero) {
             duration.value = event;
+            updateDurationSecond();
           }
         }),
         videoPlayerController!.stream.buffer.listen((event) {

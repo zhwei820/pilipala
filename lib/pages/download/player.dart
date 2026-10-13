@@ -71,6 +71,9 @@ class _DownloadPlayerPageState extends State<DownloadPlayerPage> {
       ),
       enableHA: true,
       autoplay: true,
+      duration: task != null && task.duration > 0
+          ? Duration(seconds: task.duration)
+          : null,
       width: task?.width?.toDouble(),
       height: task?.height?.toDouble(),
       direction: task?.width != null &&
