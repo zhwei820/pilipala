@@ -63,7 +63,9 @@ dependencies:
   # 分享
   share_plus: ^7.0.2
   # cookie 管理
-  webview_cookie_manager: ^2.0.6
+  # 上游已停更，最新版仍含已删除的 v1 Registrar；third_party 副本仅删去该兼容入口
+  webview_cookie_manager:
+    path: third_party/webview_cookie_manager
   # 浏览器
   webview_flutter: ^4.8.0
   # 解决sliver滑动不同步
@@ -117,20 +119,21 @@ dependencies:
       url: https://github.com/guozhigq/flutter_ns_danmaku.git
       ref: master
   # 状态栏图标控制
-  status_bar_control: ^3.2.1
+  # 上游已停更，最新版仍含已删除的 v1 Registrar；third_party 副本仅删去该兼容入口
+  status_bar_control:
+    path: third_party/status_bar_control
   # 代理
   system_proxy: ^0.1.0
   # pip
+  # guozhigq/floating 的副本：上游 main 仍 import 已删除的 v1 Registrar，新版 Flutter 编译不过
   floating:
-    git:
-      url: https://github.com/guozhigq/floating.git
-      ref: main
+    path: third_party/floating
   # html解析
   html: ^0.15.4
   # html渲染
   flutter_html: ^3.0.0-beta.2
   scrollable_positioned_list: ^0.3.8
-  catcher_2: ^1.2.6
+  catcher_2: ^2.1.12
   logger: ^2.3.0
   path: ^1.9.0
   # 电池优化
@@ -143,7 +146,7 @@ dependencies:
   # 二维码
   qr_flutter: ^4.1.0
   bottom_sheet: ^4.0.4
-  web_socket_channel: ^2.4.5
+  web_socket_channel: ^3.0.0
   brotli: ^0.6.0
   # 文本语法高亮
   re_highlight: ^0.0.3
