@@ -26,6 +26,7 @@ class _TavernSettingsPageState extends State<TavernSettingsPage> {
       TextEditingController(text: s.systemPrompt);
   late double temperature = s.temperature;
   bool showKey = false;
+  late bool biometric = service.biometricEnabled;
 
   @override
   void dispose() {
@@ -164,6 +165,17 @@ class _TavernSettingsPageState extends State<TavernSettingsPage> {
             leading: const Icon(Icons.password),
             title: const Text('修改酒馆密码'),
             onTap: _changePassword,
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.fingerprint),
+            title: const Text('指纹解锁'),
+            subtitle: const Text('进入酒馆时可用指纹代替密码'),
+            value: biometric,
+            onChanged: (v) async {
+              await service.setBiometricEnabled(v);
+              setState(() => biometric = v);
+            },
           ),
         ],
       ),

@@ -4,7 +4,10 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hive/hive.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
 import 'package:pilipala/models/tavern/character.dart';
 import 'package:pilipala/utils/storage.dart';
 
@@ -94,6 +97,50 @@ class TavernService extends GetxService {
 
   Future<void> setPassword(String password) =>
       _box.put('passwordHash', _hash(password));
+
+  // ---------- 指纹 ----------
+
+  final LocalAuthentication _localAuth = LocalAuthentication();
+
+  bool get biometricEnabled => _box.get('biometric', defaultValue: true);
+
+  Future<void> setBiometricEnabled(bool value) => _box.put('biometric', value);
+
+  /// 设备支持且已录入生物识别
+  Future<bool> canUseBiometric() async {
+    try {
+      return await _localAuth.isDeviceSupported() &&
+          (await _localAuth.getAvailableBiometrics()).isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> authenticateBiometric() async {
+    try {
+      return await _localAuth.authenticate(
+        localizedReason: '验证指纹进入酒馆',
+        biometricOnly: true,
+        authMessages: const [
+          AndroidAuthMessages(signInTitle: '进入酒馆', cancelButton: '使用密码'),
+        ],
+      );
+    } on LocalAuthException catch (e) {
+      switch (e.code) {
+        case LocalAuthExceptionCode.userCanceled:
+        case LocalAuthExceptionCode.systemCanceled:
+        case LocalAuthExceptionCode.userRequestedFallback:
+        case LocalAuthExceptionCode.authInProgress:
+          break;
+        case LocalAuthExceptionCode.temporaryLockout:
+        case LocalAuthExceptionCode.biometricLockout:
+          SmartDialog.showToast('指纹尝试次数过多，请使用密码');
+        default:
+          SmartDialog.showToast('指纹验证不可用：${e.description ?? e.code.name}');
+      }
+      return false;
+    }
+  }
 
   // ---------- 设置 / 角色 / 会话 ----------
 

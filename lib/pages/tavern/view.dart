@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:pilipala/models/tavern/character.dart';
+import 'package:pilipala/pages/main/controller.dart';
 import 'package:pilipala/services/tavern_service.dart';
 
 import 'chat.dart';
@@ -99,9 +100,72 @@ class _LockViewState extends State<_LockView> {
   final TextEditingController _confirm = TextEditingController();
   late final bool _creating = !widget.service.hasPassword;
   String? _error;
+  bool _biometric = false;
+  bool _authing = false;
+  // 只在「变为可见」时自动弹一次指纹，用户取消后不反复弹
+  bool _wasVisible = false;
+  late final AppLifecycleListener _lifecycle;
+  PageController? _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onHide: () => _wasVisible = false,
+      onResume: _onVisibilityChanged,
+    );
+    if (!_creating && widget.service.biometricEnabled) _initBiometric();
+  }
+
+  Future<void> _initBiometric() async {
+    if (!await widget.service.canUseBiometric() || !mounted) return;
+    setState(() => _biometric = true);
+    if (Get.isRegistered<MainController>()) {
+      _pageController = Get.find<MainController>().pageController
+        ..addListener(_onVisibilityChanged);
+    }
+    _onVisibilityChanged();
+  }
+
+  /// 酒馆 tab 在前台、且没有其他页面盖在主页上
+  bool get _visible {
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed ||
+        !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      return false;
+    }
+    if (!Get.isRegistered<MainController>()) return true;
+    final MainController main = Get.find<MainController>();
+    final int index = main.pagesIds.indexOf(4);
+    final PageController? pc = _pageController;
+    final int current = pc != null && pc.hasClients && pc.page != null
+        ? pc.page!.round()
+        : main.selectedIndex;
+    return index == current;
+  }
+
+  void _onVisibilityChanged() {
+    if (!_biometric || !mounted) return;
+    final bool visible = _visible;
+    if (visible && !_wasVisible) _authBiometric();
+    _wasVisible = visible;
+  }
+
+  Future<void> _authBiometric() async {
+    if (_authing) return;
+    _authing = true;
+    try {
+      if (await widget.service.authenticateBiometric()) {
+        widget.service.unlocked.value = true;
+      }
+    } finally {
+      _authing = false;
+    }
+  }
 
   @override
   void dispose() {
+    _pageController?.removeListener(_onVisibilityChanged);
+    _lifecycle.dispose();
     _input.dispose();
     _confirm.dispose();
     super.dispose();
@@ -145,7 +209,8 @@ class _LockViewState extends State<_LockView> {
               TextField(
                 controller: _input,
                 obscureText: true,
-                autofocus: true,
+                // 指纹弹窗时不抢先弹出键盘
+                autofocus: _creating || !widget.service.biometricEnabled,
                 decoration: const InputDecoration(
                     labelText: '密码', border: OutlineInputBorder()),
                 onSubmitted: _creating ? null : (_) => _submit(),
@@ -172,6 +237,16 @@ class _LockViewState extends State<_LockView> {
                   child: Text(_creating ? '设置并进入' : '进入'),
                 ),
               ),
+              if (_biometric) ...[
+                const SizedBox(height: 16),
+                IconButton(
+                  tooltip: '指纹解锁',
+                  iconSize: 48,
+                  color: colors.primary,
+                  onPressed: _authBiometric,
+                  icon: const Icon(Icons.fingerprint),
+                ),
+              ],
             ],
           ),
         ),

@@ -152,6 +152,8 @@ dependencies:
   re_highlight: ^0.0.3
   flutter_markdown_plus: ^1.0.12
   file_picker: ^11.0.3
+  local_auth: ^3.0.2
+  local_auth_android: ^2.2.0
 
 dev_dependencies:
   flutter_test:

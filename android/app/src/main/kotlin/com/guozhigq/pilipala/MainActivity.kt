@@ -5,11 +5,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
-import com.ryanheise.audioservice.AudioServiceActivity;
+import com.ryanheise.audioservice.AudioServiceFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity: AudioServiceActivity() {
+class MainActivity: AudioServiceFragmentActivity() {
     private var fileChannel: MethodChannel? = null
     // 冷启动时 Flutter 尚未注册监听，先暂存，由 Dart 主动取走
     private var pendingFile: Map<String, String?>? = null
