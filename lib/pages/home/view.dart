@@ -217,19 +217,6 @@ class UserInfoWidget extends StatelessWidget {
     return Row(
       children: [
         SearchBar(ctr: ctr),
-        Obx(
-          () => userLogin.value
-              ? Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: ClipRect(
-                    child: IconButton(
-                      onPressed: () => Get.toNamed('/whisper'),
-                      icon: const Icon(Icons.notifications_none),
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
         const SizedBox(width: 8),
         Obx(
           () => userLogin.value
