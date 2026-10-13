@@ -36,6 +36,8 @@ void main() async {
   clearLogs();
   Request();
   await Request.setCookie();
+  // 首帧的 NetworkImgLayer 会读取 imgQuality，必须在 runApp 之前完成
+  await GlobalDataCache().initialize();
 
   // 异常捕获 logo记录
   final Catcher2Options releaseConfig = Catcher2Options(
@@ -64,7 +66,6 @@ void main() async {
   }
 
   PiliSchame.init();
-  await GlobalDataCache().initialize();
 }
 
 class MyApp extends StatelessWidget {
