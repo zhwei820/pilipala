@@ -72,8 +72,9 @@ class LiveUserItem {
     face = json['face'];
     isReserveRecall = json['is_reserve_recall'];
     jumpUrl = json['jump_url'];
-    mid = json['mid'];
-    roomId = json['room_id'];
+    // 接口会把 mid / room_id 以字符串下发
+    mid = int.tryParse('${json['mid']}');
+    roomId = int.tryParse('${json['room_id']}');
     title = json['title'];
     uname = json['uname'];
   }

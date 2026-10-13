@@ -18,7 +18,7 @@ void onPreviewImg(currentUrl, picList, initIndex, context) {
 }
 
 Widget picWidget(item, context) {
-  String type = item.modules.moduleDynamic.major.type;
+  String? type = item.modules.moduleDynamic.major?.type;
   List pictures = [];
   if (type == 'MAJOR_TYPE_OPUS') {
     /// fix 图片跟rich_node_panel重复
