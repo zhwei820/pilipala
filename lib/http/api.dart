@@ -395,53 +395,6 @@ class Api {
   /// wts=1697033079
   static const String aiConclusion = '/x/web-interface/view/conclusion/get';
 
-  // captcha验证码
-  static const String getCaptcha =
-      '${HttpString.passBaseUrl}/x/passport-login/captcha?source=main_web';
-
-  // web端短信验证码
-  static const String webSmsCode =
-      '${HttpString.passBaseUrl}/x/passport-login/web/sms/send';
-
-  // web端验证码登录
-  static const String webSmsLogin =
-      '${HttpString.passBaseUrl}/x/passport-login/web/login/sms';
-
-  // web端密码登录
-  static const String loginInByWebPwd =
-      '${HttpString.passBaseUrl}/x/passport-login/web/login';
-
-  // web端二维码
-  static const String qrCodeApi =
-      '${HttpString.passBaseUrl}/x/passport-login/web/qrcode/generate';
-
-  // 扫码登录
-  static const String loginInByQrcode =
-      '${HttpString.passBaseUrl}/x/passport-login/web/qrcode/poll';
-
-  // app端短信验证码
-  static const String appSmsCode =
-      '${HttpString.passBaseUrl}/x/passport-login/sms/send';
-
-  // app端验证码登录
-
-  // 获取短信验证码
-  // static const String appSafeSmsCode =
-  //     'https://passport.bilibili.com/x/safecenter/common/sms/send';
-
-  /// app端密码登录
-  /// username
-  /// password
-  /// key
-  /// rhash
-  static const String loginInByPwdApi =
-      '${HttpString.passBaseUrl}/x/passport-login/oauth2/login';
-
-  /// 密码加密密钥
-  /// disable_rcmd
-  /// local_id
-  static const getWebKey = '${HttpString.passBaseUrl}/x/passport-login/web/key';
-
   /// cookie转access_key
   static const cookieToKey =
       '${HttpString.passBaseUrl}/x/passport-tv-login/h5/qrcode/confirm';

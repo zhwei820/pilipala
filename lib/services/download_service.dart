@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
@@ -11,6 +12,7 @@ import 'package:pilipala/http/constants.dart';
 import 'package:pilipala/http/video.dart';
 import 'package:pilipala/models/download/download_task.dart';
 import 'package:pilipala/models/video/play/url.dart';
+import 'package:pilipala/utils/id_utils.dart';
 import 'package:pilipala/utils/storage.dart';
 import 'package:pilipala/utils/video_utils.dart';
 
@@ -128,9 +130,9 @@ class DownloadService extends GetxService {
     }
   }
 
-  String taskDir(DownloadTask t) => '$_rootDir/${t.id}';
-  String videoPath(DownloadTask t) => '${taskDir(t)}/video.m4s';
-  String audioPath(DownloadTask t) => '${taskDir(t)}/audio.m4s';
+  String taskDir(DownloadTask t) => t.localDir ?? '$_rootDir/${t.id}';
+  String videoPath(DownloadTask t) => '${t.qualityDir ?? taskDir(t)}/video.m4s';
+  String audioPath(DownloadTask t) => '${t.qualityDir ?? taskDir(t)}/audio.m4s';
   String coverPath(DownloadTask t) => '${taskDir(t)}/cover.jpg';
 
   DownloadTask? find(String bvid, int cid) =>
@@ -184,6 +186,94 @@ class DownloadService extends GetxService {
     final Directory dir = Directory(taskDir(t));
     if (await dir.exists()) {
       await dir.delete(recursive: true);
+    }
+    // 官方客户端缓存按 <avid>/c_<cid> 组织，删完最后一个分P时一并删除 avid 目录
+    if (t.localDir != null && await dir.parent.exists()) {
+      if (await dir.parent.list().isEmpty) {
+        await dir.parent.delete();
+      }
+    }
+  }
+
+  /// 哔哩哔哩官方客户端缓存的默认导入目录。
+  /// 官方缓存位于 Android/data/tv.danmaku.bili/download，Android 11 起其他应用无法读取，
+  /// 需先用系统文件管理器或 adb 移到此处
+  Future<String?> biliImportDir() async {
+    if (!Platform.isAndroid) return null;
+    final String? download = await _channel.invokeMethod<String>('downloadDir');
+    return download == null ? null : '$download/bilibili';
+  }
+
+  /// 按官方缓存结构 <avid>/c_<cid>/entry.json 导入，文件保留在原处；返回新增数量。
+  /// 读取其他应用写入的非媒体文件需要「所有文件访问权限」，由调用方先申请
+  Future<int> importBiliCache(String root) async {
+    await _ready;
+    final Directory rootDir = Directory(root);
+    if (!await rootDir.exists()) return 0;
+    final List<DownloadTask> imported = [];
+    await for (final FileSystemEntity avidDir in rootDir.list()) {
+      if (avidDir is! Directory) continue;
+      final List<Directory> pages = await avidDir
+          .list()
+          .where(
+              (e) => e is Directory && e.path.split('/').last.startsWith('c_'))
+          .cast<Directory>()
+          .toList();
+      for (final Directory page in pages) {
+        final DownloadTask? task =
+            await _parseBiliEntry(page, multiPage: pages.length > 1);
+        if (task != null &&
+            find(task.bvid, task.cid) == null &&
+            imported.every((e) => e.id != task.id)) {
+          imported.add(task);
+        }
+      }
+    }
+    if (imported.isEmpty) return 0;
+    tasks
+      ..addAll(imported)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    await GStrorage.download
+        .putAll({for (final DownloadTask t in imported) t.id: t.toJson()});
+    return imported.length;
+  }
+
+  Future<DownloadTask?> _parseBiliEntry(Directory dir,
+      {required bool multiPage}) async {
+    try {
+      final File entryFile = File('${dir.path}/entry.json');
+      if (!await entryFile.exists()) return null;
+      final Map entry = jsonDecode(await entryFile.readAsString());
+      // 番剧（ep 不为空）的目录结构不同，暂不支持
+      if (entry['is_completed'] != true || entry['ep'] != null) return null;
+      final String qualityDir = '${dir.path}/${entry['type_tag']}';
+      if (!await File('$qualityDir/video.m4s').exists()) return null;
+      final Map page = entry['page_data'];
+      final String bvid = (entry['bvid'] as String?)?.isNotEmpty == true
+          ? entry['bvid']
+          : IdUtils.av2bv(entry['avid']);
+      final int bytes = entry['total_bytes'] ?? 0;
+      return DownloadTask(
+        bvid: bvid,
+        cid: page['cid'],
+        title: entry['title'] ?? bvid,
+        partTitle: multiPage ? page['part'] : null,
+        cover: entry['cover'] ?? '',
+        qn: entry['video_quality'] ?? 0,
+        qnDesc: entry['quality_pithy_description'] ?? '',
+        duration: (entry['total_time_milli'] ?? 0) ~/ 1000,
+        width: page['width'],
+        height: page['height'],
+        totalBytes: bytes,
+        receivedBytes: bytes,
+        status: DownloadStatus.completed,
+        hasAudio: entry['has_dash_audio'] ?? true,
+        localDir: dir.path,
+        qualityDir: qualityDir,
+        createdAt: entry['time_create_stamp'],
+      );
+    } catch (_) {
+      return null;
     }
   }
 

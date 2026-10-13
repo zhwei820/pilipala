@@ -30,7 +30,6 @@ import '../pages/hot/index.dart';
 import '../pages/html/index.dart';
 import '../pages/later/index.dart';
 import '../pages/live_room/view.dart';
-import '../pages/login/index.dart';
 import '../pages/download/index.dart';
 import '../pages/media/index.dart';
 import '../pages/member/index.dart';
@@ -151,8 +150,6 @@ class Routes {
     // 私信详情
     CustomGetPage(
         name: '/whisperDetail', page: () => const WhisperDetailPage()),
-    // 登录页面
-    CustomGetPage(name: '/loginPage', page: () => const LoginPage()),
     // 用户动态
     CustomGetPage(
         name: '/memberDynamics', page: () => const MemberDynamicsPage()),

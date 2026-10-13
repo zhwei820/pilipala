@@ -17,6 +17,8 @@ class DownloadTask {
     this.status = DownloadStatus.waiting,
     this.error,
     this.hasAudio = true,
+    this.localDir,
+    this.qualityDir,
     int? createdAt,
   }) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
 
@@ -37,6 +39,10 @@ class DownloadTask {
   String? error;
   // durl 单文件流没有独立音轨
   bool hasAudio;
+  // 从哔哩哔哩官方客户端缓存导入的任务：文件保留在原目录（c_<cid>），
+  // 音视频位于其下的画质子目录；本应用下载的任务两者均为 null
+  final String? localDir;
+  final String? qualityDir;
   final int createdAt;
 
   String get id => '${bvid}_$cid';
@@ -60,6 +66,8 @@ class DownloadTask {
         'status': status.name,
         'error': error,
         'hasAudio': hasAudio,
+        'localDir': localDir,
+        'qualityDir': qualityDir,
         'createdAt': createdAt,
       };
 
@@ -82,6 +90,8 @@ class DownloadTask {
         ),
         error: json['error'],
         hasAudio: json['hasAudio'] ?? true,
+        localDir: json['localDir'],
+        qualityDir: json['qualityDir'],
         createdAt: json['createdAt'],
       );
 }

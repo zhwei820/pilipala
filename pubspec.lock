@@ -41,14 +41,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.4.2"
-  asn1lib:
-    dependency: transitive
-    description:
-      name: asn1lib
-      sha256: "21afe4333076c02877d14f4a89df111e658a6d466cbfc802eb705eb91bd5adfd"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.5.0"
   async:
     dependency: transitive
     description:
@@ -449,14 +441,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.3"
-  encrypt:
-    dependency: "direct main"
-    description:
-      name: encrypt
-      sha256: "62d9aa4670cc2a8798bab89b39fc71b6dfbacf615de6cf5001fb39f7e4a996a2"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "5.0.3"
   expandable:
     dependency: "direct main"
     description:
@@ -678,14 +662,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.3.1"
-  gt3_flutter_plugin:
-    dependency: "direct main"
-    description:
-      name: gt3_flutter_plugin
-      sha256: "08f35692e937770ad6b3e2017eb8ef81839a82b8a63f5acf3abab14b688fc36c"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.1.0"
   hive:
     dependency: "direct main"
     description:
@@ -1584,7 +1560,7 @@ packages:
     source: hosted
     version: "3.1.1"
   uuid:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: uuid
       sha256: "648e103079f7c64a36dc7d39369cabb358d377078a051d6ae2ad3aa539519313"

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:pilipala/models/download/download_task.dart';
 import 'package:pilipala/services/download_service.dart';
 
@@ -14,7 +15,18 @@ class DownloadPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final DownloadService service = DownloadService.to;
     return Scaffold(
-      appBar: AppBar(title: const Text('离线缓存')),
+      appBar: AppBar(
+        title: const Text('离线缓存'),
+        actions: [
+          if (Platform.isAndroid)
+            IconButton(
+              tooltip: '导入哔哩哔哩缓存',
+              onPressed: () => _importBiliCache(context, service),
+              icon: const Icon(Icons.drive_folder_upload_outlined),
+            ),
+          const SizedBox(width: 6),
+        ],
+      ),
       body: FutureBuilder(
         future: service.ready,
         builder: (context, snapshot) {
@@ -44,6 +56,47 @@ class DownloadPage extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+Future<void> _importBiliCache(
+    BuildContext context, DownloadService service) async {
+  final String? dir = await service.biliImportDir();
+  if (dir == null || !context.mounted) return;
+  final bool? confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('导入哔哩哔哩缓存'),
+      content: Text(
+        '将读取 $dir 中的官方客户端缓存，文件保留在原处。\n\n'
+        '官方缓存位于 Android/data/tv.danmaku.bili/download，系统不允许其他应用直接读取，'
+        '请先用文件管理器把其中的文件夹移动到上述目录。\n\n'
+        '读取需要「所有文件访问权限」。',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text('取消',
+              style: TextStyle(color: Theme.of(context).colorScheme.outline)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('导入'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  if (!await Permission.manageExternalStorage.request().isGranted) {
+    SmartDialog.showToast('未授予所有文件访问权限');
+    return;
+  }
+  SmartDialog.showLoading(msg: '正在导入');
+  try {
+    final int count = await service.importBiliCache(dir);
+    SmartDialog.showToast(count > 0 ? '已导入 $count 个视频' : '没有可导入的新视频');
+  } finally {
+    SmartDialog.dismiss(status: SmartStatus.loading);
   }
 }
 

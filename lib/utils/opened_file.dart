@@ -36,7 +36,8 @@ class OpenedFile {
 
     final String dir = File(path).parent.path;
     final DownloadTask? task = service.tasks.firstWhereOrNull((t) =>
-        service.taskDir(t) == dir && t.status == DownloadStatus.completed);
+        File(service.videoPath(t)).parent.path == dir &&
+        t.status == DownloadStatus.completed);
     if (task != null) {
       Get.toNamed('/downloadPlayer', arguments: task);
       return;
