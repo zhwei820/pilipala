@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:pilipala/utils/opened_file.dart';
 import 'package:pilipala/models/common/dynamic_badge_mode.dart';
 import 'package:pilipala/pages/dynamics/index.dart';
 import 'package:pilipala/pages/home/index.dart';
@@ -39,6 +40,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
         PageController(initialPage: _mainController.selectedIndex);
     enableMYBar = setting.get(SettingBoxKey.enableMYBar, defaultValue: true);
     controllerInit();
+    WidgetsBinding.instance.addPostFrameCallback((_) => OpenedFile.init());
   }
 
   void setIndex(int value) async {

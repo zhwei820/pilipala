@@ -7,6 +7,15 @@ import 'package:pilipala/plugin/pl_player/index.dart';
 import 'package:pilipala/plugin/pl_player/models/bottom_control_type.dart';
 import 'package:pilipala/services/download_service.dart';
 
+/// 从文件管理器「打开方式」传入、不在缓存列表中的本地文件
+class LocalVideoSource {
+  LocalVideoSource({required this.video, this.audio, required this.title});
+
+  final String video;
+  final String? audio;
+  final String title;
+}
+
 class DownloadPlayerPage extends StatefulWidget {
   const DownloadPlayerPage({super.key});
 
@@ -15,7 +24,10 @@ class DownloadPlayerPage extends StatefulWidget {
 }
 
 class _DownloadPlayerPageState extends State<DownloadPlayerPage> {
-  final DownloadTask task = Get.arguments;
+  // DownloadTask 或 LocalVideoSource
+  final dynamic _args = Get.arguments;
+  late final DownloadTask? task = _args is DownloadTask ? _args : null;
+  late final String title = task?.title ?? (_args as LocalVideoSource).title;
   final PlPlayerController plPlayerController = PlPlayerController();
   late final Future<void> _initFuture;
 
@@ -27,21 +39,30 @@ class _DownloadPlayerPageState extends State<DownloadPlayerPage> {
 
   Future<void> _init() async {
     final DownloadService service = DownloadService.to;
-    final String video = service.videoPath(task);
+    final DownloadTask? task = this.task;
+    final String video;
+    final String? audio;
+    if (task != null) {
+      video = service.videoPath(task);
+      audio = task.hasAudio ? service.audioPath(task) : null;
+    } else {
+      video = (_args as LocalVideoSource).video;
+      audio = _args.audio;
+    }
     await plPlayerController.setDataSource(
       DataSource(
         type: DataSourceType.file,
         file: File(video),
         videoSource: video,
-        audioSource: task.hasAudio ? service.audioPath(task) : null,
+        audioSource: audio,
       ),
       enableHA: true,
       autoplay: true,
-      width: task.width?.toDouble(),
-      height: task.height?.toDouble(),
-      direction: task.width != null &&
-              task.height != null &&
-              task.height! > task.width!
+      width: task?.width?.toDouble(),
+      height: task?.height?.toDouble(),
+      direction: task?.width != null &&
+              task?.height != null &&
+              task!.height! > task.width!
           ? 'vertical'
           : 'horizontal',
       // 离线播放不上报观看历史
@@ -108,22 +129,24 @@ class _DownloadPlayerPageState extends State<DownloadPlayerPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(task.title, style: const TextStyle(fontSize: 16)),
-                        if (task.partTitle != null) ...[
+                        Text(title, style: const TextStyle(fontSize: 16)),
+                        if (task?.partTitle != null) ...[
                           const SizedBox(height: 4),
                           Text(
-                            task.partTitle!,
+                            task!.partTitle!,
                             style: TextStyle(
                                 color: Theme.of(context).colorScheme.outline),
                           ),
                         ],
-                        const SizedBox(height: 4),
-                        Text(
-                          task.qnDesc,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).colorScheme.outline),
-                        ),
+                        if (task != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            task!.qnDesc,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.outline),
+                          ),
+                        ],
                       ],
                     ),
                   ),

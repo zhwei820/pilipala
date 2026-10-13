@@ -1,9 +1,12 @@
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:pilipala/http/constants.dart';
 import 'package:pilipala/http/video.dart';
 import 'package:pilipala/models/download/download_task.dart';
@@ -43,8 +46,12 @@ class DownloadService extends GetxService {
   }
 
   Future<void> _load() async {
-    final Directory dir = await getApplicationDocumentsDirectory();
-    _rootDir = '${dir.path}/download';
+    final String privateRoot =
+        '${(await getApplicationDocumentsDirectory()).path}/download';
+    _rootDir = await _resolveRoot() ?? privateRoot;
+    if (_rootDir != privateRoot) {
+      await _migrate(privateRoot, _rootDir);
+    }
     final List<DownloadTask> list = GStrorage.download.values
         .map((e) => DownloadTask.fromJson(Map.from(e)))
         .toList()
@@ -60,6 +67,66 @@ class DownloadService extends GetxService {
   }
 
   Future<void> get ready => _ready;
+
+  static const MethodChannel _channel = MethodChannel('pilipala/file');
+
+  /// Android 放到公共 Download 目录，便于用户在文件管理器中查看；不可写时返回 null
+  Future<String?> _resolveRoot() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final int sdkInt = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+      // Android 10 以上写自己创建的公共目录文件无需存储权限
+      if (sdkInt < 29 && !await Permission.storage.request().isGranted) {
+        return null;
+      }
+      final String? download =
+          await _channel.invokeMethod<String>('downloadDir');
+      if (download == null) return null;
+      final Directory root = Directory('$download/PiliPala');
+      await root.create(recursive: true);
+      // 避免封面图出现在相册中
+      final File noMedia = File('${root.path}/.nomedia');
+      if (!await noMedia.exists()) {
+        await noMedia.create();
+      }
+      return root.path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 迁移旧版本保存在应用私有目录中的缓存
+  Future<void> _migrate(String from, String to) async {
+    final Directory old = Directory(from);
+    if (!await old.exists()) return;
+    try {
+      await for (final FileSystemEntity entity in old.list()) {
+        if (entity is! Directory) continue;
+        final String target = '$to/${entity.path.split('/').last}';
+        await Directory(target).create(recursive: true);
+        await for (final FileSystemEntity f in entity.list()) {
+          if (f is File) {
+            await f.copy('$target/${f.path.split('/').last}');
+          }
+        }
+      }
+      await old.delete(recursive: true);
+    } catch (_) {
+      // 迁移失败时保留旧目录，不影响新任务
+    }
+  }
+
+  /// 用系统「文件」应用打开任务所在目录，失败返回 false
+  Future<bool> openFolder(DownloadTask t) async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _channel
+              .invokeMethod<bool>('openFolder', {'path': taskDir(t)}) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
 
   String taskDir(DownloadTask t) => '$_rootDir/${t.id}';
   String videoPath(DownloadTask t) => '${taskDir(t)}/video.m4s';

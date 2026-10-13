@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:pilipala/models/download/download_task.dart';
 import 'package:pilipala/services/download_service.dart';
@@ -90,6 +92,66 @@ class _DownloadItem extends StatelessWidget {
     }
   }
 
+  void _showMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.folder_open_outlined),
+              title: const Text('打开存储位置'),
+              onTap: () async {
+                Navigator.of(context).pop();
+                if (!await service.openFolder(task)) {
+                  _showPath();
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: const Text('复制存储路径'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Clipboard.setData(ClipboardData(text: service.taskDir(task)));
+                SmartDialog.showToast('已复制');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('删除缓存'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _confirmDelete(Get.context!);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPath() {
+    final String path = service.taskDir(task);
+    SmartDialog.show(
+      builder: (context) => AlertDialog(
+        title: const Text('存储位置'),
+        content: SelectableText(path),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: path));
+              SmartDialog.dismiss();
+              SmartDialog.showToast('已复制');
+            },
+            child: const Text('复制'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
@@ -126,7 +188,7 @@ class _DownloadItem extends StatelessWidget {
     };
     return InkWell(
       onTap: _onTap,
-      onLongPress: () => _confirmDelete(context),
+      onLongPress: () => _showMenu(context),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
         child: Row(

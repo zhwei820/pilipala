@@ -230,6 +230,26 @@
 
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.guozhigq.pilipala.OpenFileActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <!-- 文件管理器中「打开方式」播放离线缓存的 .m4s；系统按 octet-stream 下发，
+                 用路径后缀限定，避免出现在所有未知类型文件的打开方式中。
+                 path 匹配要求声明 host，content uri 的 host 即 provider authority -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="video/iso.segment" />
+                <data android:pathPattern=".*\\.m4s" />
+            </intent-filter>
+        </activity>
         <service 
             android:name="com.ryanheise.audioservice.AudioService"
             android:foregroundServiceType="mediaPlayback"
