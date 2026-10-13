@@ -77,11 +77,10 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
     tabs.value = defaultTabs;
 
-    if (tabbarSort.contains(TabType.rcmd.id)) {
-      initialIndex.value = tabbarSort.indexOf(TabType.rcmd.id);
-    } else {
-      initialIndex.value = 0;
-    }
+    // 按实际展示的 tab 计算：保存的排序里可能含有已下线的 tab（如直播）
+    final int rcmdIndex =
+        defaultTabs.indexWhere((e) => e['type'] == TabType.rcmd);
+    initialIndex.value = rcmdIndex != -1 ? rcmdIndex : 0;
     tabsCtrList = tabs.map((e) => e['ctr']).toList();
     tabsPageList = tabs.map<Widget>((e) => e['page']).toList();
 

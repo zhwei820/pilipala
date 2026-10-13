@@ -271,7 +271,7 @@ class _StyleSettingState extends State<StyleSetting> {
             onTap: () => settingController.seteDefaultHomePage(context),
             title: Text('默认启动页', style: titleStyle),
             subtitle: Obx(() => Text(
-                '当前启动页：${defaultNavigationBars.firstWhere((e) => e['id'] == settingController.defaultHomePage.value)['label']}',
+                '当前启动页：${defaultNavigationBars.firstWhere((e) => e['id'] == settingController.defaultHomePage.value, orElse: () => defaultNavigationBars.first)['label']}',
                 style: subTitleStyle)),
           ),
           ListTile(
