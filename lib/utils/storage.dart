@@ -107,6 +107,8 @@ class SettingBoxKey {
       enableQuickDouble = 'enableQuickDouble',
       enableShowDanmaku = 'enableShowDanmaku',
       enableBackgroundPlay = 'enableBackgroundPlay',
+      // 进入后台/息屏后继续播放的分钟数，0 为不限制
+      backgroundPlayMinutes = 'backgroundPlayMinutes',
       fullScreenGestureMode = 'fullScreenGestureMode',
 
       /// 隐私

@@ -37,6 +37,8 @@ class PlPlayerController {
 
   // 添加一个私有静态变量来保存实例
   static PlPlayerController? _instance;
+  // 只读当前实例；工厂构造在无实例时会新建一个
+  static PlPlayerController? get current => _instance;
 
   // 流事件  监听播放状态变化
   StreamSubscription? _playerEventSubs;

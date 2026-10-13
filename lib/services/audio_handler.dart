@@ -141,6 +141,14 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
     _item.add(mediaItem);
   }
 
+  // 离线播放页没有 heroTag / 视频详情，由调用方直接给出媒体信息；退出时同样走 onVideoDetailDispose
+  onLocalVideoChange(MediaItem item) {
+    if (!enableBackgroundPlay) return;
+
+    setMediaItem(item);
+    _item.add(item);
+  }
+
   onVideoDetailDispose() {
     if (!enableBackgroundPlay) return;
 

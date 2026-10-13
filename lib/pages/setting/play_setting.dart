@@ -8,6 +8,7 @@ import 'package:pilipala/models/video/play/ao_output.dart';
 import 'package:pilipala/models/video/play/quality.dart';
 import 'package:pilipala/pages/setting/widgets/select_dialog.dart';
 import 'package:pilipala/plugin/pl_player/index.dart';
+import 'package:pilipala/services/background_play_timer.dart';
 import 'package:pilipala/services/service_locator.dart';
 import 'package:pilipala/utils/global_data_cache.dart';
 import 'package:pilipala/utils/storage.dart';
@@ -31,6 +32,7 @@ class _PlaySettingState extends State<PlaySetting> {
   late int defaultFullScreenMode;
   late int defaultBtmProgressBehavior;
   late String defaultAoOutput;
+  late int backgroundPlayMinutes;
 
   @override
   void initState() {
@@ -49,6 +51,8 @@ class _PlaySettingState extends State<PlaySetting> {
         defaultValue: BtmProgresBehavior.values.first.code);
     defaultAoOutput =
         setting.get(SettingBoxKey.defaultAoOutput, defaultValue: '0');
+    backgroundPlayMinutes =
+        setting.get(SettingBoxKey.backgroundPlayMinutes, defaultValue: 0);
   }
 
   @override
@@ -112,6 +116,34 @@ class _PlaySettingState extends State<PlaySetting> {
             subTitle: '进入后台时继续播放',
             setKey: SettingBoxKey.enableBackgroundPlay,
             defaultVal: false,
+          ),
+          ListTile(
+            dense: false,
+            title: Text('后台播放时长', style: titleStyle),
+            subtitle: Text(
+              backgroundPlayMinutes == 0
+                  ? '息屏或进入后台后持续播放'
+                  : '息屏或进入后台 $backgroundPlayMinutes 分钟后自动暂停',
+              style: subTitleStyle,
+            ),
+            onTap: () async {
+              int? result = await showDialog(
+                context: context,
+                builder: (context) {
+                  return SelectDialog<int>(
+                      title: '后台播放时长',
+                      value: backgroundPlayMinutes,
+                      values: BackgroundPlayTimer.options.map((e) {
+                        return {'title': e == 0 ? '不限制' : '$e 分钟', 'value': e};
+                      }).toList());
+                },
+              );
+              if (result != null) {
+                backgroundPlayMinutes = result;
+                setting.put(SettingBoxKey.backgroundPlayMinutes, result);
+                setState(() {});
+              }
+            },
           ),
           if (Platform.isAndroid)
             const SetSwitchItem(

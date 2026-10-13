@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pilipala/models/download/download_task.dart';
 import 'package:pilipala/plugin/pl_player/index.dart';
 import 'package:pilipala/plugin/pl_player/models/bottom_control_type.dart';
 import 'package:pilipala/services/download_service.dart';
+import 'package:pilipala/services/service_locator.dart';
 
 /// 从文件管理器「打开方式」传入、不在缓存列表中的本地文件
 class LocalVideoSource {
@@ -49,6 +51,17 @@ class _DownloadPlayerPageState extends State<DownloadPlayerPage> {
       video = (_args as LocalVideoSource).video;
       audio = _args.audio;
     }
+    final File? cover = task != null ? File(service.coverPath(task)) : null;
+    videoPlayerServiceHandler.onLocalVideoChange(MediaItem(
+      id: video,
+      title: task?.partTitle ?? title,
+      artist: task?.partTitle != null ? title : (task?.ownerName ?? ''),
+      duration: task != null && task.duration > 0
+          ? Duration(seconds: task.duration)
+          : null,
+      artUri:
+          cover != null && await cover.exists() ? Uri.file(cover.path) : null,
+    ));
     await plPlayerController.setDataSource(
       DataSource(
         type: DataSourceType.file,
@@ -72,6 +85,7 @@ class _DownloadPlayerPageState extends State<DownloadPlayerPage> {
 
   @override
   void dispose() {
+    videoPlayerServiceHandler.onVideoDetailDispose();
     plPlayerController.dispose();
     super.dispose();
   }
