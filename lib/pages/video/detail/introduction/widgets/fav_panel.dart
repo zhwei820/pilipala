@@ -3,7 +3,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/utils/feed_back.dart';
 import 'package:pilipala/utils/storage.dart';
 
 class FavPanel extends StatefulWidget {
@@ -18,11 +17,23 @@ class FavPanel extends StatefulWidget {
 class _FavPanelState extends State<FavPanel> {
   final Box<dynamic> localCache = GStrorage.localCache;
   late Future _futureBuilderFuture;
+  bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
     _futureBuilderFuture = widget.ctr!.queryVideoInFolder();
+  }
+
+  Future<void> _chooseAndSubmit(bool checkValue, int index) async {
+    if (_submitting) return;
+    _submitting = true;
+    widget.ctr!.onChoose(checkValue, index);
+    try {
+      await widget.ctr!.actionFavVideo();
+    } finally {
+      _submitting = false;
+    }
   }
 
   @override
@@ -59,7 +70,7 @@ class _FavPanelState extends State<FavPanel> {
                               widget.ctr!.favFolderData.value.list![index];
                           return ListTile(
                             onTap: () =>
-                                widget.ctr!.onChoose(item.favState != 1, index),
+                                _chooseAndSubmit(item.favState != 1, index),
                             dense: true,
                             leading: Icon([23, 1].contains(item.attr)
                                 ? Icons.lock_outline
@@ -77,7 +88,7 @@ class _FavPanelState extends State<FavPanel> {
                               child: Checkbox(
                                 value: item.favState == 1,
                                 onChanged: (bool? checkValue) =>
-                                    widget.ctr!.onChoose(checkValue!, index),
+                                    _chooseAndSubmit(checkValue!, index),
                               ),
                             ),
                           );
@@ -96,46 +107,6 @@ class _FavPanelState extends State<FavPanel> {
                 }
               },
             ),
-          ),
-        ),
-        Divider(
-          height: 1,
-          color: Theme.of(context).disabledColor.withOpacity(0.08),
-        ),
-        Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 12,
-            bottom: MediaQuery.of(context).padding.bottom + 12,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: <Widget>[
-              TextButton(
-                onPressed: () => Get.back(),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.only(left: 30, right: 30),
-                  backgroundColor:
-                      Theme.of(context).colorScheme.onInverseSurface, // 设置按钮背景色
-                ),
-                child: const Text('取消'),
-              ),
-              const SizedBox(width: 10),
-              TextButton(
-                onPressed: () async {
-                  feedBack();
-                  await widget.ctr!.actionFavVideo();
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.only(left: 30, right: 30),
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primary, // 设置按钮背景色
-                ),
-                child: const Text('确认'),
-              ),
-            ],
           ),
         ),
       ],

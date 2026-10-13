@@ -1,16 +1,3 @@
-buildscript {
-    ext.kotlin_version = '1.9.0'
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
 allprojects {
     repositories {
         google()
@@ -21,6 +8,15 @@ allprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    // 部分旧版 pub 插件未声明 namespace（AGP 8+ 必填），从其 manifest 的 package 属性补上
+    plugins.withId('com.android.library') {
+        def manifest = project.file('src/main/AndroidManifest.xml')
+        if (project.android.namespace == null && manifest.exists()) {
+            project.android.namespace = new XmlSlurper().parse(manifest).@package.text()
+        }
+    }
 }
 subprojects {
     project.evaluationDependsOn(':app')
