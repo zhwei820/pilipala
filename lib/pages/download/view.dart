@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pilipala/models/download/download_task.dart';
 import 'package:pilipala/services/download_service.dart';
+import 'package:pilipala/utils/utils.dart';
 
 class DownloadPage extends StatelessWidget {
   const DownloadPage({super.key});
@@ -323,7 +324,11 @@ class _DownloadItem extends StatelessWidget {
   String get _statusText {
     switch (task.status) {
       case DownloadStatus.completed:
-        return '${task.qnDesc} · ${_size(task.totalBytes)}';
+        return [
+          task.qnDesc,
+          if (task.duration > 0) Utils.timeFormat(task.duration),
+          _size(task.totalBytes),
+        ].join(' · ');
       case DownloadStatus.downloading:
         return '${_size(task.receivedBytes)} / ${_size(task.totalBytes)}';
       case DownloadStatus.waiting:
