@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../pages/dynamics/index.dart';
 import '../../pages/home/index.dart';
 import '../../pages/media/index.dart';
+import '../../pages/tavern/index.dart';
 
 List defaultNavigationBars = [
   {
@@ -46,5 +47,19 @@ List defaultNavigationBars = [
     'label': "媒体库",
     'count': 0,
     'page': const MediaPage(),
+  },
+  {
+    'id': 4,
+    'icon': const Icon(
+      Icons.local_bar_outlined,
+      size: 21,
+    ),
+    'selectIcon': const Icon(
+      Icons.local_bar,
+      size: 21,
+    ),
+    'label': "酒馆",
+    'count': 0,
+    'page': const TavernPage(),
   }
 ];

@@ -10,6 +10,7 @@ class GStrorage {
   static late final Box<dynamic> setting;
   static late final Box<dynamic> video;
   static late final Box<dynamic> download;
+  static late final Box<dynamic> tavern;
 
   static Future<void> init() async {
     final Directory dir = await getApplicationSupportDirectory();
@@ -44,6 +45,13 @@ class GStrorage {
     // 离线缓存任务
     download = await Hive.openBox(
       'download',
+      compactionStrategy: (int entries, int deletedEntries) {
+        return deletedEntries > 20;
+      },
+    );
+    // 酒馆：角色、会话、模型设置
+    tavern = await Hive.openBox(
+      'tavern',
       compactionStrategy: (int entries, int deletedEntries) {
         return deletedEntries > 20;
       },
@@ -152,6 +160,8 @@ class SettingBoxKey {
       dynamicBadgeMode = 'dynamicBadgeMode',
       enableGradientBg = 'enableGradientBg',
       navBarSort = 'navBarSort',
+      // 酒馆 tab 上线前保存的排序里没有它，只自动补一次，之后尊重用户在设置里的开关
+      tavernNavMigrated = 'tavernNavMigrated',
       actionTypeSort = 'actionTypeSort';
 }
 

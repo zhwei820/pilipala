@@ -94,7 +94,14 @@ class MainController extends GetxController {
   void setNavBarConfig() async {
     defaultNavTabs = [...defaultNavigationBars];
     navBarSort =
-        setting.get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 2, 3]);
+        setting.get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 2, 3, 4]);
+    if (!setting.get(SettingBoxKey.tavernNavMigrated, defaultValue: false)) {
+      if (!navBarSort.contains(4)) {
+        navBarSort = [...navBarSort, 4];
+        setting.put(SettingBoxKey.navBarSort, navBarSort);
+      }
+      setting.put(SettingBoxKey.tavernNavMigrated, true);
+    }
     defaultNavTabs.retainWhere((item) => navBarSort.contains(item['id']));
     defaultNavTabs.sort((a, b) =>
         navBarSort.indexOf(a['id']).compareTo(navBarSort.indexOf(b['id'])));

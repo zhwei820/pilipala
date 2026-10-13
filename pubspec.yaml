@@ -150,6 +150,8 @@ dependencies:
   brotli: ^0.6.0
   # 文本语法高亮
   re_highlight: ^0.0.3
+  flutter_markdown_plus: ^1.0.12
+  file_picker: ^11.0.3
 
 dev_dependencies:
   flutter_test:
@@ -174,14 +176,17 @@ dependency_overrides:
     git:
       url: https://github.com/media-kit/media-kit
       path: media_kit
+      ref: c533e446755f51cf53c7e57aea873f2aa5355f81
   media_kit_video:
     git:
       url: https://github.com/media-kit/media-kit
       path: media_kit_video
+      ref: 285f7919bbf4a7d89a62615b14a3766a171ad575
   media_kit_libs_video:
     git:
       url: https://github.com/media-kit/media-kit
       path: libs/universal/media_kit_libs_video
+      ref: 285f7919bbf4a7d89a62615b14a3766a171ad575
 
 flutter_launcher_icons:
   android: true
