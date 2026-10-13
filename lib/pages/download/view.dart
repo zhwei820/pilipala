@@ -45,17 +45,208 @@ class DownloadPage extends StatelessWidget {
                 ),
               );
             }
+            final List<List<DownloadTask>> groups = _groupByVideo(tasks);
             return ListView.builder(
-              itemCount: tasks.length,
+              itemCount: groups.length,
               padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).padding.bottom + 12),
-              itemBuilder: (context, index) =>
-                  _DownloadItem(task: tasks[index], service: service),
+              itemBuilder: (context, index) => groups[index].length == 1
+                  ? _DownloadItem(task: groups[index].first, service: service)
+                  : _GroupItem(tasks: groups[index], service: service),
             );
           });
         },
       ),
     );
+  }
+}
+
+/// 同一视频的多个分P合为一组；组按最近加入的分P排序，组内按分P序号排序
+List<List<DownloadTask>> _groupByVideo(List<DownloadTask> tasks) {
+  final Map<String, List<DownloadTask>> groups = {};
+  for (final DownloadTask t in tasks) {
+    groups.putIfAbsent(t.bvid, () => []).add(t);
+  }
+  for (final List<DownloadTask> g in groups.values) {
+    g.sort(_byPage);
+  }
+  return groups.values.toList();
+}
+
+int _byPage(DownloadTask a, DownloadTask b) {
+  if (a.page != null && b.page != null) return a.page!.compareTo(b.page!);
+  if (a.page != null) return -1;
+  if (b.page != null) return 1;
+  return a.createdAt.compareTo(b.createdAt);
+}
+
+String _size(int bytes) {
+  if (bytes <= 0) return '0MB';
+  final double mb = bytes / 1024 / 1024;
+  return mb >= 1024
+      ? '${(mb / 1024).toStringAsFixed(2)}GB'
+      : '${mb.toStringAsFixed(1)}MB';
+}
+
+Widget _cover(BuildContext context, DownloadService service, DownloadTask t) {
+  final ColorScheme colorScheme = Theme.of(context).colorScheme;
+  final File cover = File(service.coverPath(t));
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(6),
+    child: SizedBox(
+      width: 128,
+      height: 72,
+      child: cover.existsSync()
+          ? Image.file(cover, fit: BoxFit.cover)
+          : Container(
+              color: colorScheme.onInverseSurface,
+              child: Icon(Icons.movie_outlined, color: colorScheme.outline),
+            ),
+    ),
+  );
+}
+
+class _GroupItem extends StatelessWidget {
+  const _GroupItem({required this.tasks, required this.service});
+
+  final List<DownloadTask> tasks;
+  final DownloadService service;
+
+  String get _statusText {
+    final int done =
+        tasks.where((t) => t.status == DownloadStatus.completed).length;
+    final int size = tasks.fold(0, (sum, t) => sum + t.totalBytes);
+    if (done == tasks.length) return '${tasks.length}个视频 · ${_size(size)}';
+    final bool downloading =
+        tasks.any((t) => t.status == DownloadStatus.downloading);
+    return '${downloading ? '缓存中' : '未完成'} · 已完成 $done/${tasks.length}';
+  }
+
+  void _confirmDeleteAll(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除缓存'),
+        content: Text('确定删除「${tasks.first.title}」的全部 ${tasks.length} 个分P吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('取消',
+                style: TextStyle(color: Theme.of(context).colorScheme.outline)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              for (final DownloadTask t in tasks) {
+                service.remove(t);
+              }
+            },
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final DownloadTask first = tasks.first;
+    return InkWell(
+      onTap: () => Get.toNamed('/downloadGroup', arguments: first.bvid),
+      onLongPress: () => _confirmDeleteAll(context),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                _cover(context, service, first),
+                Positioned(
+                  right: 4,
+                  bottom: 4,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${tasks.length}P',
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    first.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    [
+                      if (first.ownerName != null) first.ownerName!,
+                      _statusText,
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: colorScheme.outline),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: colorScheme.outline),
+            const SizedBox(width: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 多P视频的分P列表
+class DownloadGroupPage extends StatelessWidget {
+  const DownloadGroupPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final DownloadService service = DownloadService.to;
+    final String bvid = Get.arguments;
+    bool popped = false;
+    return Obx(() {
+      final List<DownloadTask> parts =
+          service.tasks.where((t) => t.bvid == bvid).toList()..sort(_byPage);
+      if (parts.isEmpty) {
+        // 全部删除后返回上一页；Obx 可能多次重建，只返回一次
+        if (!popped) {
+          popped = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) => Get.back());
+        }
+        return const Scaffold();
+      }
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(parts.first.title,
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        body: ListView.builder(
+          itemCount: parts.length,
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 12),
+          itemBuilder: (context, index) => _DownloadItem(
+              task: parts[index], service: service, inGroup: true),
+        ),
+      );
+    });
   }
 }
 
@@ -101,18 +292,13 @@ Future<void> _importBiliCache(
 }
 
 class _DownloadItem extends StatelessWidget {
-  const _DownloadItem({required this.task, required this.service});
+  const _DownloadItem(
+      {required this.task, required this.service, this.inGroup = false});
 
   final DownloadTask task;
   final DownloadService service;
-
-  static String _size(int bytes) {
-    if (bytes <= 0) return '0MB';
-    final double mb = bytes / 1024 / 1024;
-    return mb >= 1024
-        ? '${(mb / 1024).toStringAsFixed(2)}GB'
-        : '${mb.toStringAsFixed(1)}MB';
-  }
+  // 分P列表中只显示分P信息，不重复显示封面和视频标题
+  final bool inGroup;
 
   String get _statusText {
     switch (task.status) {
@@ -232,7 +418,6 @@ class _DownloadItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    final File cover = File(service.coverPath(task));
     final IconData? actionIcon = switch (task.status) {
       DownloadStatus.downloading || DownloadStatus.waiting => Icons.pause,
       DownloadStatus.paused => Icons.download_outlined,
@@ -246,32 +431,28 @@ class _DownloadItem extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: SizedBox(
-                width: 128,
-                height: 72,
-                child: cover.existsSync()
-                    ? Image.file(cover, fit: BoxFit.cover)
-                    : Container(
-                        color: colorScheme.onInverseSurface,
-                        child: Icon(Icons.movie_outlined,
-                            color: colorScheme.outline),
-                      ),
-              ),
-            ),
+            if (inGroup)
+              SizedBox(
+                width: 44,
+                child: Text(
+                  'P${task.page ?? '-'}',
+                  style: TextStyle(fontSize: 13, color: colorScheme.outline),
+                ),
+              )
+            else
+              _cover(context, service, task),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    task.title,
-                    maxLines: task.partTitle == null ? 2 : 1,
+                    inGroup ? (task.partTitle ?? task.title) : task.title,
+                    maxLines: task.partTitle == null || inGroup ? 2 : 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 14),
                   ),
-                  if (task.partTitle != null)
+                  if (!inGroup && task.partTitle != null)
                     Text(
                       task.partTitle!,
                       maxLines: 1,

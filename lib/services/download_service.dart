@@ -66,6 +66,26 @@ class DownloadService extends GetxService {
       }
     }
     tasks.assignAll(list);
+    await _backfillFromEntry(list);
+  }
+
+  /// 早期导入的任务没有记录分P序号和UP主，从随视频一起移动过来的 entry.json 补齐
+  Future<void> _backfillFromEntry(List<DownloadTask> list) async {
+    final Map<String, Map<String, dynamic>> updated = {};
+    for (final DownloadTask t in list) {
+      if (t.page != null) continue;
+      final File entryFile = File('${taskDir(t)}/entry.json');
+      try {
+        if (!await entryFile.exists()) continue;
+        final Map entry = jsonDecode(await entryFile.readAsString());
+        t.page = entry['page_data']?['page'];
+        t.ownerName = entry['owner_name'];
+        updated[t.id] = t.toJson();
+      } catch (_) {}
+    }
+    if (updated.isNotEmpty) {
+      await GStrorage.download.putAll(updated);
+    }
   }
 
   Future<void> get ready => _ready;
@@ -259,6 +279,8 @@ class DownloadService extends GetxService {
         cid: page['cid'],
         title: entry['title'] ?? bvid,
         partTitle: multiPage ? page['part'] : null,
+        page: page['page'],
+        ownerName: entry['owner_name'],
         cover: entry['cover'] ?? '',
         qn: entry['video_quality'] ?? 0,
         qnDesc: entry['quality_pithy_description'] ?? '',

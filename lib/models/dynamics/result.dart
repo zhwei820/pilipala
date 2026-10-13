@@ -630,9 +630,11 @@ class Emoji {
   int? type;
   Emoji.fromJson(Map<String, dynamic> json) {
     iconUrl = json['icon_url'];
-    size = json['size'].toDouble();
+    size = json['size'] is String
+        ? double.tryParse(json['size'])
+        : (json['size'] as num?)?.toDouble();
     text = json['text'];
-    type = json['type'];
+    type = json['type'] is String ? int.tryParse(json['type']) : json['type'];
   }
 }
 

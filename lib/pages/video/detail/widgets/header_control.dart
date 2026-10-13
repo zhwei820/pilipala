@@ -626,6 +626,8 @@ class _HeaderControlState extends State<HeaderControl> {
       cid: cid,
       title: detail.title ?? ctr.bvid,
       partTitle: (detail.pages?.length ?? 0) > 1 ? part?.pagePart : null,
+      page: part?.page,
+      ownerName: detail.owner?.name,
       cover: detail.pic ?? ctr.cover.value,
       qn: format.quality!,
       qnDesc: format.newDesc ?? '',

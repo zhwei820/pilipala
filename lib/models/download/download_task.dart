@@ -6,6 +6,8 @@ class DownloadTask {
     required this.cid,
     required this.title,
     this.partTitle,
+    this.page,
+    this.ownerName,
     required this.cover,
     required this.qn,
     required this.qnDesc,
@@ -25,6 +27,9 @@ class DownloadTask {
   final String title;
   // 多P视频的分P标题，单P为null
   final String? partTitle;
+  // 分P序号，用于分组内排序
+  int? page;
+  String? ownerName;
   final String cover;
   final int qn;
   final String qnDesc;
@@ -49,6 +54,8 @@ class DownloadTask {
         'cid': cid,
         'title': title,
         'partTitle': partTitle,
+        'page': page,
+        'ownerName': ownerName,
         'cover': cover,
         'qn': qn,
         'qnDesc': qnDesc,
@@ -68,6 +75,8 @@ class DownloadTask {
         cid: json['cid'],
         title: json['title'],
         partTitle: json['partTitle'],
+        page: json['page'],
+        ownerName: json['ownerName'],
         cover: json['cover'] ?? '',
         qn: json['qn'],
         qnDesc: json['qnDesc'] ?? '',

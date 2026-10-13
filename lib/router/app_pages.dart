@@ -83,6 +83,8 @@ class Routes {
     // 离线缓存
     CustomGetPage(name: '/download', page: () => const DownloadPage()),
     CustomGetPage(
+        name: '/downloadGroup', page: () => const DownloadGroupPage()),
+    CustomGetPage(
         name: '/downloadPlayer', page: () => const DownloadPlayerPage()),
     //
     CustomGetPage(name: '/fav', page: () => const FavPage()),
