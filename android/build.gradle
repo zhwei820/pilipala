@@ -16,6 +16,12 @@ subprojects {
         if (project.android.namespace == null && manifest.exists()) {
             project.android.namespace = new XmlSlurper().parse(manifest).@package.text()
         }
+        // 旧插件 compileSdk 过低，编不过新版 androidx 依赖的 AAR metadata 检查
+        project.androidComponents.finalizeDsl { ext ->
+            if (ext.compileSdk == null || ext.compileSdk < 34) {
+                ext.compileSdk = 34
+            }
+        }
     }
 }
 subprojects {
