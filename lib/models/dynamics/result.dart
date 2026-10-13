@@ -144,7 +144,10 @@ class ModuleAuthorModel {
     name = json['name'];
     pubAction = json['pub_action'];
     pubTime = json['pub_time'];
-    pubTs = json['pub_ts'] == 0 ? null : json['pub_ts'];
+    final pubTsRaw = json['pub_ts'] is String
+        ? int.tryParse(json['pub_ts'])
+        : json['pub_ts'];
+    pubTs = pubTsRaw == 0 ? null : pubTsRaw;
     type = json['type'];
     vip = json['vip'];
   }
@@ -473,7 +476,7 @@ class DynamicTopicModel {
   String? name;
 
   DynamicTopicModel.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
+    id = json['id'] is String ? int.tryParse(json['id']) : json['id'];
     jumpUrl = json['jump_url'];
     name = json['name'];
   }
@@ -521,8 +524,10 @@ class DynamicArchiveModel {
     stat = json['stat'] != null ? Stat.fromJson(json['stat']) : null;
     title = json['title'];
     type = json['type'];
-    epid = json['epid'];
-    seasonId = json['season_id'];
+    epid = json['epid'] is String ? int.tryParse(json['epid']) : json['epid'];
+    seasonId = json['season_id'] is String
+        ? int.tryParse(json['season_id'])
+        : json['season_id'];
   }
 }
 
@@ -717,7 +722,7 @@ class DynamicLiveModel {
       uid = livePlayInfo['uid'];
       parentAreaName = livePlayInfo['parent_area_name'];
       roomId = livePlayInfo['room_id'];
-      liveId = livePlayInfo['live_id'];
+      liveId = livePlayInfo['live_id']?.toString();
       liveStatus = livePlayInfo['live_status'];
       cover = livePlayInfo['cover'];
       online = livePlayInfo['online'];
