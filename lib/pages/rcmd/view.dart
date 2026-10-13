@@ -86,9 +86,18 @@ class _RcmdPageState extends State<RcmdPage>
                               _rcmdController.videoList.isEmpty) {
                             return contentGrid(_rcmdController, []);
                           } else {
-                            // 显示视频列表
-                            return contentGrid(
-                                _rcmdController, _rcmdController.videoList);
+                            final List list = _rcmdController.videoList;
+                            final int divider = _rcmdController.lastSeenIndex;
+                            if (divider <= 0) {
+                              return contentGrid(_rcmdController, list);
+                            }
+                            return SliverMainAxisGroup(slivers: [
+                              contentGrid(
+                                  _rcmdController, list.sublist(0, divider)),
+                              const SliverToBoxAdapter(child: _LastSeenBar()),
+                              contentGrid(
+                                  _rcmdController, list.sublist(divider)),
+                            ]);
                           }
                         },
                       );
@@ -152,6 +161,30 @@ class _RcmdPageState extends State<RcmdPage>
               : const VideoCardVSkeleton();
         },
         childCount: videoList!.isNotEmpty ? videoList!.length : 10,
+      ),
+    );
+  }
+}
+
+class _LastSeenBar extends StatelessWidget {
+  const _LastSeenBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = Theme.of(context).colorScheme.outline;
+    final Widget line =
+        Expanded(child: Divider(color: color.withOpacity(0.3), height: 1));
+    return SizedBox(
+      height: RcmdController.lastSeenExtent,
+      child: Row(
+        children: [
+          line,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text('上次看到这里', style: TextStyle(fontSize: 12, color: color)),
+          ),
+          line,
+        ],
       ),
     );
   }

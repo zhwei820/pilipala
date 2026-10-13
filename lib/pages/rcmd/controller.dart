@@ -21,6 +21,13 @@ class RcmdController extends GetxController {
   late RxList<dynamic> videoList;
   // 网格行高 + 行间距，由视图按当前列数与字体缩放写入
   double rowExtent = 0;
+  // 「上次看到这里」分隔条之后的第一张卡片；按对象而非下标记录，屏蔽 UP 主删卡片后位置仍正确
+  final Rxn<dynamic> lastSeenAnchor = Rxn<dynamic>();
+  static const double lastSeenExtent = 40;
+
+  int get lastSeenIndex => lastSeenAnchor.value == null
+      ? -1
+      : videoList.indexOf(lastSeenAnchor.value);
 
   @override
   void onInit() {
@@ -69,6 +76,7 @@ class RcmdController extends GetxController {
           videoList.value = res['data'];
         }
       } else if (type == 'onRefresh') {
+        lastSeenAnchor.value = null;
         if (enableSaveLastData) {
           videoList.insertAll(0, res['data']);
         } else {
@@ -110,14 +118,19 @@ class RcmdController extends GetxController {
     }
     final int columns = crossAxisCount.value;
     final ScrollPosition pos = scrollController.position;
+    double bottom = pos.pixels + pos.viewportDimension;
+    final int oldDivider = lastSeenIndex;
+    if (oldDivider >= 0 && (oldDivider ~/ columns) * rowExtent < bottom) {
+      bottom -= lastSeenExtent;
+    }
     // 第一行完全位于屏幕下方的行，新卡片从这里插入；部分可见的卡片保留在上方
-    final int row =
-        ((pos.pixels + pos.viewportDimension) / rowExtent).ceil();
+    final int row = (bottom / rowExtent).ceil();
     final int index = (row * columns).clamp(0, videoList.length);
     videoList.insertAll(index, data);
+    lastSeenAnchor.value = data.first;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!scrollController.hasClients) return;
-      final double target = ((index ~/ columns) * rowExtent)
+      final double target = (((index + columns - 1) ~/ columns) * rowExtent)
           .clamp(0.0, scrollController.position.maxScrollExtent);
       scrollController.animateTo(target,
           duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
@@ -141,6 +154,13 @@ class RcmdController extends GetxController {
   }
 
   void blockUserCb(mid) {
+    final int divider = lastSeenIndex;
+    if (divider >= 0) {
+      lastSeenAnchor.value = videoList
+          .skip(divider)
+          .cast<dynamic>()
+          .firstWhere((e) => e.owner.mid != mid, orElse: () => null);
+    }
     videoList.removeWhere((e) => e.owner.mid == mid);
     videoList.refresh();
     SmartDialog.showToast('已移除相关视频');
