@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:ns_danmaku/ns_danmaku.dart';
 import 'package:pilipala/http/user.dart';
+import 'package:pilipala/models/download/download_task.dart';
 import 'package:pilipala/models/video/play/quality.dart';
 import 'package:pilipala/models/video/play/url.dart';
 import 'package:pilipala/pages/dlna/index.dart';
@@ -17,6 +18,7 @@ import 'package:pilipala/pages/video/detail/introduction/widgets/menu_row.dart';
 import 'package:pilipala/plugin/pl_player/index.dart';
 import 'package:pilipala/plugin/pl_player/models/play_repeat.dart';
 import 'package:pilipala/utils/storage.dart';
+import 'package:pilipala/services/download_service.dart';
 import 'package:pilipala/services/shutdown_timer_service.dart';
 import '../../../../http/danmaku.dart';
 import '../../../../models/common/search_type.dart';
@@ -156,6 +158,14 @@ class _HeaderControlState extends State<HeaderControl> {
                       leading: const Icon(Icons.watch_later_outlined, size: 20),
                       title: const Text('添加至「稍后再看」', style: titleStyle),
                     ),
+                    if (widget.videoType == SearchType.video)
+                      ListTile(
+                        onTap: () => {Get.back(), showDownloadSheet()},
+                        dense: true,
+                        leading:
+                            const Icon(Icons.file_download_outlined, size: 20),
+                        title: const Text('离线缓存', style: titleStyle),
+                      ),
                     ListTile(
                       onTap: () => {Get.back(), scheduleExit()},
                       dense: true,
@@ -545,6 +555,84 @@ class _HeaderControlState extends State<HeaderControl> {
   }
 
   /// 选择画质
+  void showDownloadSheet() {
+    final List<FormatItem> formats = videoInfo.supportFormats ?? [];
+    // dash 一次返回当前账号可播放的全部画质；durl 只返回当前画质
+    final Set<int> available = videoInfo.dash != null
+        ? videoInfo.dash!.video!.map((e) => e.id!).toSet()
+        : {if (videoInfo.quality != null) videoInfo.quality!};
+    final List<FormatItem> options =
+        formats.where((e) => available.contains(e.quality)).toList();
+    if (options.isEmpty) {
+      SmartDialog.showToast('暂无可缓存的画质');
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxHeight: 360),
+          clipBehavior: Clip.hardEdge,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
+          ),
+          margin: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const SizedBox(
+                height: 45,
+                child: Center(child: Text('缓存画质', style: titleStyle)),
+              ),
+              Flexible(
+                child: Material(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final FormatItem f in options)
+                        ListTile(
+                          onTap: () {
+                            Get.back();
+                            addDownload(f);
+                          },
+                          dense: true,
+                          contentPadding:
+                              const EdgeInsets.only(left: 20, right: 20),
+                          title: Text(f.newDesc ?? '${f.quality}'),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void addDownload(FormatItem format) {
+    final VideoDetailController ctr = widget.videoDetailCtr!;
+    final VideoDetailData detail = videoIntroController.videoDetail.value;
+    final int cid = ctr.cid.value;
+    final Part? part = detail.pages?.firstWhereOrNull((e) => e.cid == cid);
+    DownloadService.to.add(DownloadTask(
+      bvid: ctr.bvid,
+      cid: cid,
+      title: detail.title ?? ctr.bvid,
+      partTitle: (detail.pages?.length ?? 0) > 1 ? part?.pagePart : null,
+      cover: detail.pic ?? ctr.cover.value,
+      qn: format.quality!,
+      qnDesc: format.newDesc ?? '',
+      duration: part?.duration ?? detail.duration ?? 0,
+    ));
+  }
+
   void showSetVideoQa() {
     final List<FormatItem> videoFormat = videoInfo.supportFormats!;
     final VideoQuality currentVideoQa = widget.videoDetailCtr!.currentVideoQa;

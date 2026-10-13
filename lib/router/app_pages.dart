@@ -31,6 +31,7 @@ import '../pages/html/index.dart';
 import '../pages/later/index.dart';
 import '../pages/live_room/view.dart';
 import '../pages/login/index.dart';
+import '../pages/download/index.dart';
 import '../pages/media/index.dart';
 import '../pages/member/index.dart';
 import '../pages/member_archive/index.dart';
@@ -80,6 +81,10 @@ class Routes {
     CustomGetPage(name: '/setting', page: () => const SettingPage()),
     //
     CustomGetPage(name: '/media', page: () => const MediaPage()),
+    // 离线缓存
+    CustomGetPage(name: '/download', page: () => const DownloadPage()),
+    CustomGetPage(
+        name: '/downloadPlayer', page: () => const DownloadPlayerPage()),
     //
     CustomGetPage(name: '/fav', page: () => const FavPage()),
     //
