@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:floating/floating.dart';
@@ -1322,6 +1323,10 @@ class _HeaderControlState extends State<HeaderControl> {
             ),
           ],
           const Spacer(),
+          if (isFullScreen.value) ...[
+            const _Clock(),
+            SizedBox(width: buttonSpace),
+          ],
           // ComBtn(
           //   icon: const Icon(
           //     FontAwesomeIcons.cropSimple,
@@ -1475,5 +1480,47 @@ class MSliderTrackShape extends RoundedRectSliderTrackShape {
         offset.dy + (parentBox.size.height - trackHeight) / 2 + 4;
     final double trackWidth = parentBox.size.width;
     return Rect.fromLTWH(trackLeft, trackTop, trackWidth, trackHeight);
+  }
+}
+
+class _Clock extends StatefulWidget {
+  const _Clock();
+
+  @override
+  State<_Clock> createState() => _ClockState();
+}
+
+class _ClockState extends State<_Clock> {
+  DateTime _now = DateTime.now();
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _schedule();
+  }
+
+  // 对齐到下一个整分钟刷新，避免显示比系统时间晚最多一分钟
+  void _schedule() {
+    _timer = Timer(Duration(seconds: 60 - _now.second), () {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+      _schedule();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return Text(
+      '${two(_now.hour)}:${two(_now.minute)}',
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+    );
   }
 }
