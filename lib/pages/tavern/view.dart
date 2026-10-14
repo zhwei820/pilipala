@@ -11,6 +11,7 @@ import 'package:pilipala/services/tavern_service.dart';
 
 import 'chat.dart';
 import 'edit.dart';
+import 'generate.dart';
 import 'settings.dart';
 
 class TavernPage extends StatefulWidget {
@@ -281,35 +282,6 @@ class _CharacterListView extends StatelessWidget {
     }
   }
 
-  Future<void> _generate(BuildContext context) async {
-    final TextEditingController idea = TextEditingController();
-    final String? text = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('AI 生成角色'),
-        content: TextField(
-          controller: idea,
-          autofocus: true,
-          minLines: 2,
-          maxLines: 5,
-          decoration: const InputDecoration(
-            hintText: '描述你想要的角色，如：冷淡的赛博朋克女黑客，嘴硬心软',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('取消')),
-          TextButton(
-              onPressed: () => Navigator.pop(context, idea.text.trim()),
-              child: const Text('生成')),
-        ],
-      ),
-    );
-    if (text == null || text.isEmpty) return;
-    openTavernPage(CharacterEditPage(generateFrom: text));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -318,7 +290,7 @@ class _CharacterListView extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'AI 生成角色',
-            onPressed: () => _generate(context),
+            onPressed: () => openTavernPage(const CharacterGeneratePage()),
             icon: const Icon(Icons.auto_awesome_outlined),
           ),
           IconButton(

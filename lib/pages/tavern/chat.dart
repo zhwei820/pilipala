@@ -22,6 +22,8 @@ class _TavernChatPageState extends State<TavernChatPage> {
   final TextEditingController _input = TextEditingController();
   late List<TavernMessage> messages = service.loadChat(widget.character);
   CancelToken? _cancelToken;
+  // 自动模式：角色每说完一段，自动代替用户发送「继续」
+  bool _auto = false;
 
   bool get _streaming => _cancelToken != null;
 
@@ -38,6 +40,10 @@ class _TavernChatPageState extends State<TavernChatPage> {
     final String text = _input.text.trim();
     if (text.isEmpty || _streaming) return;
     _input.clear();
+    _sendText(text);
+  }
+
+  void _sendText(String text) {
     setState(() => messages.add(TavernMessage(role: 'user', content: text)));
     _persist();
     _reply();
@@ -53,23 +59,45 @@ class _TavernChatPageState extends State<TavernChatPage> {
       messages.add(reply);
       _cancelToken = token;
     });
+    bool failed = false;
     try {
       await for (final String delta in service.streamChat(prompt, token)) {
         if (!mounted) return;
         setState(() => reply.content += delta);
       }
     } catch (e) {
+      failed = true;
       SmartDialog.showToast('请求失败：$e', displayTime: const Duration(seconds: 4));
     }
     if (!mounted) return;
     setState(() {
       if (reply.content.isEmpty) messages.remove(reply);
       _cancelToken = null;
+      // 出错或空回复时关掉自动模式，避免无限重试
+      if (failed || reply.content.isEmpty) _auto = false;
     });
     _persist();
+    if (_auto && !token.isCancelled) _autoContinue();
   }
 
-  void _stop() => _cancelToken?.cancel();
+  /// 留一点阅读时间再发；期间用户关掉自动或手动发了消息则放弃
+  Future<void> _autoContinue() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted || !_auto || _streaming) return;
+    if (messages.isEmpty || messages.last.isUser) return;
+    _sendText('继续');
+  }
+
+  void _toggleAuto() {
+    setState(() => _auto = !_auto);
+    SmartDialog.showToast(_auto ? '自动模式已开启' : '自动模式已关闭');
+    if (_auto && !_streaming) _autoContinue();
+  }
+
+  void _stop() {
+    setState(() => _auto = false);
+    _cancelToken?.cancel();
+  }
 
   void _regenerate() {
     if (_streaming || messages.isEmpty || messages.last.isUser) return;
@@ -171,6 +199,13 @@ class _TavernChatPageState extends State<TavernChatPage> {
           ),
         ]),
         actions: [
+          IconButton(
+            tooltip: _auto ? '关闭自动模式' : '自动模式',
+            isSelected: _auto,
+            onPressed: _toggleAuto,
+            icon: const Icon(Icons.play_circle_outline),
+            selectedIcon: const Icon(Icons.pause_circle),
+          ),
           IconButton(
             tooltip: '重新生成',
             onPressed: canRegenerate ? _regenerate : null,

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -25,7 +26,9 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
   final TavernService service = TavernService.to;
   late TavernCharacter draft;
   late final Map<String, TextEditingController> fields;
-  bool generating = false;
+  CancelToken? _generateToken;
+
+  bool get generating => _generateToken != null;
 
   static const List<(String, String, int)> _fieldSpecs = [
     ('name', '名字', 1),
@@ -53,6 +56,7 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
 
   @override
   void dispose() {
+    _generateToken?.cancel();
     for (final TextEditingController c in fields.values) {
       c.dispose();
     }
@@ -60,18 +64,21 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
   }
 
   Future<void> _generate() async {
-    setState(() => generating = true);
+    final CancelToken token = CancelToken();
+    setState(() => _generateToken = token);
     try {
-      final TavernCharacter result =
-          await service.generateCharacter(widget.generateFrom!);
+      final TavernCharacter result = await service
+          .generateCharacter(widget.generateFrom!, cancelToken: token);
       final Map<String, dynamic> json = result.toJson();
       for (final MapEntry<String, TextEditingController> e in fields.entries) {
         e.value.text = json[e.key] ?? '';
       }
+    } on DioException catch (e) {
+      if (!CancelToken.isCancel(e)) SmartDialog.showToast('生成失败：$e');
     } catch (e) {
       SmartDialog.showToast('生成失败：$e');
     } finally {
-      if (mounted) setState(() => generating = false);
+      if (mounted) setState(() => _generateToken = null);
     }
   }
 
@@ -150,13 +157,19 @@ class _CharacterEditPageState extends State<CharacterEditPage> {
         ],
       ),
       body: generating
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 12),
-                  Text('正在生成角色…'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 12),
+                  const Text('正在生成角色…'),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => _generateToken?.cancel(),
+                    icon: const Icon(Icons.close),
+                    label: const Text('取消'),
+                  ),
                 ],
               ),
             )

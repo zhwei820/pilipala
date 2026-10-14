@@ -262,8 +262,9 @@ class TavernService extends GetxService {
     }
   }
 
-  /// 按描述生成角色卡（JSON 模式），解析失败抛出可读的错误信息
-  Future<TavernCharacter> generateCharacter(String idea) async {
+  /// 按描述生成角色卡（JSON 模式），解析失败抛出可读的错误信息；被取消时原样抛出 DioException
+  Future<TavernCharacter> generateCharacter(String idea,
+      {CancelToken? cancelToken}) async {
     if (settings.apiKey.isEmpty) throw '请先在酒馆设置里填写 API Key';
     const String instruction = '你是 SillyTavern 角色卡作者。根据用户的描述创作一个角色，'
         '只输出一个 json 对象，字段：name（角色名）、description（外貌、身份、背景）、'
@@ -284,6 +285,7 @@ class TavernService extends GetxService {
           'response_format': {'type': 'json_object'},
         },
         options: _authOptions,
+        cancelToken: cancelToken,
       );
       final String content = res.data['choices'][0]['message']['content'];
       final TavernCharacter? character =
@@ -291,6 +293,7 @@ class TavernService extends GetxService {
       if (character == null) throw '生成结果缺少角色名，请重试';
       return character;
     } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) rethrow;
       throw await _describeError(e);
     } on FormatException {
       throw '模型返回的不是合法 JSON，请重试';
